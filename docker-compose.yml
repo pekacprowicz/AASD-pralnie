@@ -1,0 +1,13 @@
+version: '3'
+services:
+  xmpp_server:
+    image: prosody/prosody
+    ports:
+      - "5222:5222"
+      - "5280:5280"
+      - "5281:5281"
+    volumes:
+      - ./prosody_conf:/etc/prosody
+      - ./prosody_modules:/opt/modules
+volumes:
+  serwer-data:
