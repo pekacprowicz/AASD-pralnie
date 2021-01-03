@@ -7,7 +7,9 @@ from constants.agents import Agents
 import pathlib
 import sqlite3
 
+
 class Supervisor(Agent):
+    
 
     class VerifyUser(CyclicBehaviour):
         async def run(self):
@@ -31,6 +33,7 @@ class Supervisor(Agent):
         async def run(self):
             msg = await self.receive(timeout=10)
             msg_type = msg.get_metadata("type")
+            CLIENT = msg.sender
             print(f"Incoming msg_type: {msg_type}")
             self.set_next_state("STATE_TWO")
 
@@ -39,7 +42,6 @@ class Supervisor(Agent):
         async def run(self):
             metadata = {"type": "ReservationCheck"}
             msg = Messaging.prepare_message(Agents.TIMETABLE, "", **metadata)
-            
             await self.send(msg)
             print("Message sent!")
             self.set_next_state("STATE_THREE")
