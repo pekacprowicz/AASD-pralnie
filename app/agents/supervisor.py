@@ -30,11 +30,8 @@ class Supervisor(Agent):
                 response = Messaging.prepare_message(msg.sender, "", **metadata)
                 await self.send(response)
             else:
-<<<<<<< HEAD
                 print(f"Supervisor's VerifyUser Behaviour hasn't received any message")
-=======
-                print(f"No message...")
-    
+
     class CreateAuthenticationAndPaymentBehav(FSMBehaviour):
 
         async def on_start(self):
@@ -108,20 +105,13 @@ class Supervisor(Agent):
             msg = await self.receive(timeout=10)
             msg_type = msg.get_metadata("type")
             print(f"Incoming msg_type: {msg_type}")
->>>>>>> origin/Franek
-
 
     async def setup(self):
         self.db_connection = self.connect_to_local_db()
         self.db_init()
         verify_msg_template = Template()
-<<<<<<< HEAD
         verify_msg_template.set_metadata("type", "UserPenaltiesVerification")
         vu_behav = self.VerifyUserBehav()
-        self.add_behaviour(vu_behav, verify_msg_template)
-=======
-        verify_msg_template.set_metadata("type", "UserVerification")
-        vu_behav = self.VerifyUser()
         #self.add_behaviour(vu_behav, verify_msg_template)
         fsm = self.CreateAuthenticationAndPaymentBehav()
         fsm.add_state(name="STATE_ONE", state=self.AuthenticationState(), initial=True)
@@ -140,7 +130,6 @@ class Supervisor(Agent):
         fsm.add_transition(source="STATE_SIX", dest="STATE_SEVEN")
         fsm.add_transition(source="STATE_SEVEN", dest="STATE_EIGHT")
         self.add_behaviour(fsm)
->>>>>>> origin/Franek
 
     def connect_to_local_db(self):
         connection = None
