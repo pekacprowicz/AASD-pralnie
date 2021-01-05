@@ -25,6 +25,10 @@ class StateFree(State):
             msg_type = msg.get_metadata("type")
             print(f"Incoming msg_type: {msg_type}")
             if msg_type == "GrantAccess":
+
+                # TODO otrzymać klienta
+                client = msg.get_metadata("client")
+
                 self.set_next_state(STATE_AUTH)
 
         print(f"No message...")
@@ -33,21 +37,29 @@ class StateFree(State):
 class StateAuth(State):
     async def run(self):
         print("I'm at state auth")
+
         metadata = {"type": "AccessGranted"}
         msg = Messaging.prepare_message(Agents.SUPERVISOR, "", **metadata)
-            
         await self.send(msg)
         print("Message sent!")
-        
+
         self.set_next_state(STATE_WORKING)
 
 class StateWorking(State):
     async def run(self):
         print("I'm at state working")
         sleep(10)
+
+        # TODO odesłać clienta powiadomienie
+        metadata = {"type": "WorkCompleted"}
+        msg = Messaging.prepare_message(client, "", **metadata)
+        await self.send(msg)
+
         self.set_next_state(STATE_FREE)
 
 class WashingMachine(Agent):
+    client = ""
+
     async def setup(self):
         fsm = WashingMachineFSMBehaviour()
         fsm.add_state(name=STATE_FREE, state=StateFree(), initial=True)
