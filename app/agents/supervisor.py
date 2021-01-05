@@ -1,20 +1,15 @@
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, FSMBehaviour, State
 from spade.template import Template
-<<<<<<< HEAD
-from utils.messaging import Messaging
-=======
 from spade.message import Message
 from utils.messaging import Messaging
 from constants.agents import Agents
->>>>>>> origin/Franek
 import pathlib
 import sqlite3
 
 
 class Supervisor(Agent):
     
-
     class VerifyUserBehav(CyclicBehaviour):
         async def run(self):
             msg = await self.receive(timeout=10)
