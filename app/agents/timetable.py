@@ -26,6 +26,33 @@ class Timetable(Agent):
             else:
                 print(f"Supervisor's VerifyUser Behaviour hasn't received any message")
 
+    class UserCameBehav(OneShotBehaviour):
+        userCame = False
+
+        async def run(self):
+            
+            self.userCame = self.check_if_user_came()
+            
+            if not self.userCame:
+               
+                print("UserCameBehav running")
+                
+                metadata = {"type": "UserAbsence"}
+                msg = Messaging.prepare_message(Agents.SUPERVISOR, "", **metadata)
+                
+    
+                await self.send(msg)
+                print("Message sent!")
+
+            # stop agent from behaviour
+            await self.agent.stop()
+            
+        def check_if_user_came(self):
+            userCame= random.choice([True, False])
+            #  print (userCame)
+    
+            return False
+
     async def setup(self):
         self.db_connection = self.connect_to_local_db()
         self.db_init()
@@ -33,6 +60,11 @@ class Timetable(Agent):
         verify_msg_template.set_metadata("type", "UserPenaltiesVerificationResponse")
         vu_behav = self.VerifyUserBehav()
         #self.add_behaviour(vu_behav, verify_msg_template)
+
+        print("Calendar started")
+        b = self.UserCameBehav()
+        self.add_behaviour(b)
+        
 
     def connect_to_local_db(self):
         connection = None
@@ -65,5 +97,4 @@ class Timetable(Agent):
         crsr = self.db_connection.cursor()
         crsr.execute(sql_create_penalties_table)
         dates_with_priorities = crsr.fetchall()
-
         return dates_with_priorities

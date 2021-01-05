@@ -4,6 +4,8 @@ from spade.behaviour import OneShotBehaviour, FSMBehaviour, State
 from constants.agents import Agents
 from spade.message import Message
 from utils.messaging import Messaging
+from spade.template import Template
+
 import sqlite3
 import pathlib
 
@@ -132,6 +134,21 @@ class Client(Agent):
             msg = await self.receive(timeout=10)
             msg_type = msg.get_metadata("type")
             print(f"Incoming msg_type: {msg_type}")
+            
+    class PenaltyNotificationBehav(OneShotBehaviour):
+        async def run(self):
+            print("PenaltyNotificationBehav running")
+
+            msg = await self.receive(timeout=10) # wait for a message for 10 seconds
+            if msg:
+                print("Message received with content: {}".format(msg.body))
+                print("Message received with type: {}".format(msg.get_metadata("type")))
+            else:
+                print("Did not received any message after 10 seconds")
+
+            # stop agent from behaviour
+            await self.agent.stop()
+            
 
     async def setup(self):
         self.db_connection = self.connect_to_local_db()
@@ -149,6 +166,14 @@ class Client(Agent):
         fsm.add_transition(source="STATE_THREE", dest="STATE_FOUR")
         fsm.add_transition(source="STATE_FOUR", dest="STATE_FIVE")
         self.add_behaviour(fsm)
+        self.dates_priority_list = list()
+        self.create_res_behav = self.CreateReservationBehav(self.dates_priority_list)
+        self.add_behaviour(self.create_res_behav)
+        
+        penalty_behav = self.PenaltyNotificationBehav()
+        penalty_template = Template()
+        penalty_template.set_metadata("type", "3 Absences")
+        self.add_behaviour(penalty_behav, penalty_template)
 
     def connect_to_local_db(self):
         connection = None

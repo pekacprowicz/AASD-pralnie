@@ -6,6 +6,8 @@ from utils.messaging import Messaging
 from constants.agents import Agents
 import pathlib
 import sqlite3
+import random
+from utils.messaging import Messaging 
 
 
 class Supervisor(Agent):
@@ -43,6 +45,42 @@ class Supervisor(Agent):
             CLIENT = msg.sender
             print(f"Incoming msg_type: {msg_type}")
             self.set_next_state("STATE_TWO")
+
+    class CountAbsencesBehav(CyclicBehaviour):
+        absences = 0
+        
+        async def run(self):
+            print("CountAbsencesBehav running")
+
+            msg = await self.receive(timeout=10) # wait for a message for 10 seconds
+            if msg:
+                msg_type = msg.get_metadata("type")
+                if msg_type == "UserAbsence":
+                    print("Message received with content: {}".format(msg_type))
+                    self.absences = self.countAbsences()
+                    if self.absences == 3:
+                        
+                        metadata = {"type": "3 Absences"}
+                        msg = Messaging.prepare_message("client@localhost", "", **metadata)
+                                           # Set the message content
+                        await self.send(msg)
+                    
+                    
+            else:
+                print("Did not received any message after 10 seconds")
+
+            # stop agent from behaviour
+            
+           
+                
+            await self.agent.stop()
+            
+        def countAbsences(self):
+            #check in db
+            absences = random.choice([0, 3])
+            #  print (absences)
+    
+            return 3
 
 
     class ReservationCheckState(State):
@@ -125,6 +163,11 @@ class Supervisor(Agent):
         fsm.add_transition(source="STATE_SIX", dest="STATE_SEVEN")
         fsm.add_transition(source="STATE_SEVEN", dest="STATE_EIGHT")
         self.add_behaviour(fsm)
+
+        absences_behav = self.CountAbsencesBehav()
+        absences_msg_template = Template()
+        absences_msg_template.set_metadata("type", "UserAbsence")
+        self.add_behaviour(absences_behav, absences_msg_template)
 
     def connect_to_local_db(self):
         connection = None
