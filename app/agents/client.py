@@ -50,7 +50,7 @@ class Client(Agent):
                     await self.agent.stop()
 
             else:
-                print(f"Client's {self.name} VerifyUser Behaviour hasn't received any message")
+                print(f"Client's {self.name} SendDateProposal State hasn't received any message")
 
     class DateProposalResponseState(State):
         async def run(self):
@@ -67,7 +67,15 @@ class Client(Agent):
                     await self.send(msg)
 
             else:
-                print(f"Client's {self.name} VerifyUser Behaviour hasn't received any message")
+                print(f"Client's {self.name} SendDateProposal State hasn't received any message")
+
+    class DateAcceptedState(State):
+        async def run(self):
+            print("Date accepted")
+
+    class DateAcceptedState(State):
+        async def run(self):
+            print("Date rejected")
 
     def init_create_reservation_behaviour(self):
         verify_msg_template = Template()
@@ -78,12 +86,14 @@ class Client(Agent):
         fsm.add_state(name="UserPenaltiesVerificationState", state=self.UserPenaltiesVerificationState(), initial=True)
         fsm.add_state(name="SendDateProposal", state=self.SendDateProposalState())
         fsm.add_state(name="DateProposalResponse", state=self.DateProposalResponseState())
-        fsm.add_state(name="STATE_FOUR", state=self.PaymentResponseState())
-        fsm.add_state(name="STATE_FIVE", state=self.MachineAvailableState())
-        fsm.add_transition(source="STATE_ONE", dest="STATE_TWO")
-        fsm.add_transition(source="STATE_TWO", dest="STATE_THREE")
-        fsm.add_transition(source="STATE_THREE", dest="STATE_FOUR")
-        fsm.add_transition(source="STATE_FOUR", dest="STATE_FIVE")
+        fsm.add_state(name="DateAccepted", state=self.DateAcceptedState())
+        fsm.add_state(name="DateRejected", state=self.DateRejectedState())
+        fsm.add_transition(source="UserPenaltiesVerificationState", dest="SendDateProposal")
+        fsm.add_transition(source="UserPenaltiesVerificationState", dest="DateRejected")
+        fsm.add_transition(source="SendDateProposal", dest="DateProposalResponse")
+        fsm.add_transition(source="DateProposalResponse", dest="SendDateProposal")
+        fsm.add_transition(source="DateProposalResponse", dest="DateAccepted")
+        fsm.add_transition(source="DateProposalResponse", dest="DateRejected")
         self.add_behaviour(fsm)
 
     class CreateAuthenticationAndPaymentBehav(FSMBehaviour):
