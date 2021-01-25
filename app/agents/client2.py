@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 25 18:01:27 2021
+
+@author: nataliaszakiel
+"""
+
 import asyncio
 from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, FSMBehaviour, State, CyclicBehaviour
@@ -12,7 +20,40 @@ import pathlib
 class Client(Agent):
     
     
+    
+    
+    class NewBehav(CyclicBehaviour):
+        async def run(self):
+            print(f"[{self.agent.jid.localpart}] PenaltyNotificationBehav running")
+
+            msg = await self.receive(timeout=10) # wait for a message for 10 seconds
+            if msg:
+                msg_type = msg.get_metadata("type")
+                if msg_type == "3 Absences":
+                    print(f"[{self.agent.jid.localpart}] Message received with type: {format(msg.get_metadata('type'))}")
+                
+                if msg_type == "AuthenticationAnswerCheck":
+                    print(f"[{self.agent.jid.localpart}] Message received with type: {format(msg.get_metadata('type'))}")
+                
+                if msg_type == "PaymentAnswerCheck":
+                    print(f"[{self.agent.jid.localpart}] Message received with type: {format(msg.get_metadata('type'))}")
+
+           
+            else:
+                print(f"[{self.agent.jid.localpart}] Did not received any message after 10 seconds")
+    
+   
+    
+   
+    
+   
+    
+   
     class CreateReservationBehav(FSMBehaviour):
+        
+        
+        
+        
         async def on_start(self):
             print(f"[{self.agent.jid.localpart}] Client CreateReservationBehav starting at initial state {self.current_state}")
 
@@ -184,13 +225,13 @@ class Client(Agent):
         fsm.add_transition(source="STATE_TWO", dest="STATE_THREE")
         fsm.add_transition(source="STATE_THREE", dest="STATE_FOUR")
         fsm.add_transition(source="STATE_FOUR", dest="STATE_FIVE")
-        self.add_behaviour(fsm)
+        #self.add_behaviour(fsm)
         
         self.dates_priority_list = list()
         tmp_template = Template()
         tmp_template.set_metadata("type", "tmp")
         create_res_behav = self.CreateReservationBehav(self.dates_priority_list)
-        self.add_behaviour(create_res_behav, tmp_template)
+        #self.add_behaviour(create_res_behav, tmp_template)
         
         
 

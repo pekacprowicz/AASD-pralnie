@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 25 18:56:57 2021
+
+@author: nataliaszakiel
+"""
+
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, FSMBehaviour, State
 from spade.template import Template
@@ -11,6 +19,34 @@ from utils.messaging import Messaging
 
 
 class Supervisor(Agent):
+    
+    
+    
+    class NewBehav(CyclicBehaviour):
+        async def run(self):
+            print(f"[{self.agent.jid.localpart}] PenaltyNotificationBehav running")
+
+            msg = await self.receive(timeout=10) # wait for a message for 10 seconds
+            if msg:
+                msg_type = msg.get_metadata("type")
+                if msg_type == "UserPenaltiesVerification":
+                    print(f"[{self.agent.jid.localpart}] Message received with type: {format(msg.get_metadata('type'))}")
+                
+                if msg_type == "UserAuthentication":
+                    print(f"[{self.agent.jid.localpart}] Message received with type: {format(msg.get_metadata('type'))}")
+                    
+                if msg_type == "UserPaymentInitial":
+                    print(f"[{self.agent.jid.localpart}] Message received with type: {format(msg.get_metadata('type'))}")
+                    
+                if msg_type == "3 Absences":
+                    print(f"[{self.agent.jid.localpart}] Message received with type: {format(msg.get_metadata('type'))}")
+    
+    
+    
+    
+    
+    
+    
     
     class VerifyUserBehav(CyclicBehaviour):
         async def run(self):
@@ -118,7 +154,7 @@ class Supervisor(Agent):
                         self.absences = self.countAbsences()
                         if self.absences == 3:
                             
-                            metadata = {"type": "Absences"}
+                            metadata = {"type": "3 Absences"}
                             msg = Messaging.prepare_message(Agents.SUPERVISOR, Agents.CLIENT, "", **metadata)
                                                # Set the message content
                             await self.send(msg)

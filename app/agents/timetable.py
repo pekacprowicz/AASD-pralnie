@@ -1,11 +1,13 @@
 import asyncio
 from spade.agent import Agent
-from spade.behaviour import CyclicBehaviour
+from spade.behaviour import CyclicBehaviour, OneShotBehaviour
 from constants.agents import Agents
 from spade.message import Message
 from utils.messaging import Messaging
+from spade.template import Template
 import sqlite3
 import pathlib
+import random
 
 class Timetable(Agent):
     
@@ -21,7 +23,7 @@ class Timetable(Agent):
                 else:
                     metadata["status"] = "accepted"
                 
-                response = Messaging.prepare_message(msg.sender, "", **metadata)
+                response = Messaging.prepare_message(Agents.TIMETABLE, msg.sender, "", **metadata)
                 await self.send(response)
             else:
                 print(f"Supervisor's VerifyUser Behaviour hasn't received any message")
@@ -35,14 +37,14 @@ class Timetable(Agent):
             
             if not self.userCame:
                
-                print("UserCameBehav running")
+                print(f"[{self.agent.jid.localpart}] UserCameBehav running")
                 
                 metadata = {"type": "UserAbsence"}
-                msg = Messaging.prepare_message(Agents.SUPERVISOR, "", **metadata)
+                msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, "", **metadata)
                 
     
                 await self.send(msg)
-                print("Message sent!")
+                print(f"[{self.agent.jid.localpart}] Message sent!")
 
             # stop agent from behaviour
             await self.agent.stop()
@@ -54,6 +56,7 @@ class Timetable(Agent):
             return False
 
     async def setup(self):
+        print ("Timetable started")
         self.db_connection = self.connect_to_local_db()
         self.db_init()
         verify_msg_template = Template()
@@ -61,7 +64,6 @@ class Timetable(Agent):
         vu_behav = self.VerifyUserBehav()
         #self.add_behaviour(vu_behav, verify_msg_template)
 
-        print("Calendar started")
         b = self.UserCameBehav()
         self.add_behaviour(b)
         
@@ -95,6 +97,6 @@ class Timetable(Agent):
         sql_get_user_penalties = f" SELECT * FROM priorities; "
 
         crsr = self.db_connection.cursor()
-        crsr.execute(sql_create_penalties_table)
-        dates_with_priorities = crsr.fetchall()
-        return dates_with_priorities
+        crsr.execute(sql_get_user_penalties)
+        sql_get_user_penalties = crsr.fetchall()
+        return sql_get_user_penalties

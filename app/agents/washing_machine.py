@@ -4,6 +4,7 @@ from spade.agent import Agent
 from spade.message import Message
 from utils.messaging import Messaging
 from spade.behaviour import FSMBehaviour, State
+from constants.agents import Agents
 
 STATE_FREE = "STATE_FREE"
 STATE_AUTH = "STATE_AUTH"
@@ -39,7 +40,7 @@ class StateAuth(State):
         print("I'm at state auth")
 
         metadata = {"type": "AccessGranted"}
-        msg = Messaging.prepare_message(Agents.SUPERVISOR, "", **metadata)
+        msg = Messaging.prepare_message(Agents.WASHINGMACHINE, Agents.SUPERVISOR, "", **metadata)
         await self.send(msg)
         print("Message sent!")
 
@@ -48,11 +49,11 @@ class StateAuth(State):
 class StateWorking(State):
     async def run(self):
         print("I'm at state working")
-        sleep(10)
+        time.sleep(10)
 
         # TODO odesłać clienta powiadomienie
         metadata = {"type": "WorkCompleted"}
-        msg = Messaging.prepare_message(client, "", **metadata)
+        msg = Messaging.prepare_message(Agents.WASHINGMACHINE, Agents.CLIENT, "", **metadata)
         await self.send(msg)
 
         self.set_next_state(STATE_FREE)

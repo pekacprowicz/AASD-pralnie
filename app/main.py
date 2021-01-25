@@ -20,7 +20,7 @@ if __name__ == "__main__":
     cl.web.start()
     print("Agent web at {}:{}".format(cl.web.hostname, cl.web.port))
 
-    while sv.is_alive():
+    while True:
         try:
             time.sleep(1)
         except KeyboardInterrupt:
@@ -34,17 +34,23 @@ if __name__ == "__main__":
     
     clientAgent = Client("client@localhost", "aasd")
     clientAgent.start()
+    
     supervisorAgent = Supervisor("supervisor@localhost", "123456")
+    
     future = supervisorAgent.start()
+    #agent.web.start(hostname="127.0.0.1", port="10000")
    
     future.result() # wait for receiver agent to be prepared.
     
+    
+    
+
     timatableAgent = Timetable("timetable@localhost", "123456")
     timatableAgent.start()
    
-    
 
-    while supervisorAgent.is_alive():
+
+    while True:
         try:
             time.sleep(1)
         except KeyboardInterrupt:
@@ -54,5 +60,5 @@ if __name__ == "__main__":
             break
     print("Agents finished")
     
-    
-    
+
+       
