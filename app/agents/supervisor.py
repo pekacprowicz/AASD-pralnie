@@ -16,22 +16,34 @@ class Supervisor(Agent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
-                if msg["type"] = "UserPenaltiesVerification"
-                    
-                elif msg["type"] = 
-
-
-                else if msg[]
-                username = msg.sender.localpart
-                metadata = {"type": "UserPenaltiesVerificationResponse"}
-
-                if self.search_for_active_penalties(username) > 0:
-                    metadata["status"] = "rejected"
-                else:
-                    metadata["status"] = "accepted"
+                print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
+                if msg["type"] == "UserPenaltiesVerification":
+                    await self.send(send_user_penalties_verification_response(msg))
+                    print(f"[{self.agent.jid.localpart}] Message sent to Client!") 
+                elif msg["type"] == "UserAuthentication":
+                    #ask timetable for user 
+                    await self.send(check_user_reservation(msg))
+                    print(f"[{self.agent.jid.localpart}] Message sent to Timetable!") 
+                elif msg["type"] == "ReservationCheck":
+                    await self.send(msg)
+                elif msg["type"] == "UserPaymentInitial":
+                    #TODO if payment == accepted : send accepted to client
+                    await self.send(msg)
+                    await self.send(msg) #send "open" message to washing machine
+                    #     else send refused to client  
+                    await self.send(msg)
                 
-                response = Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
-                await self.send(response)
+                elif msg["type"] ==
+                    await self.send(msg)
+                elif msg["type"] ==
+                    await self.send(msg)
+                elif msg["type"] ==
+                    await self.send(msg)
+                elif msg["type"] ==
+                    await self.send(msg)
+                elif msg["type"] ==
+                    await self.send(msg)
+                   
             else:
                 print(f"[{self.agent.jid.localpart}] Supervisor's VerifyUser Behaviour hasn't received any message")
 
@@ -176,6 +188,24 @@ class Supervisor(Agent):
         absences_msg_template = Template()
         absences_msg_template.set_metadata("type", "UserAbsence")
         self.add_behaviour(absences_behav, absences_msg_template)
+
+    def send_user_penalties_verification_response(self, msg):
+        username = msg.sender.localpart
+        metadata = {"type": "UserPenaltiesVerificationResponse"}
+
+        if self.search_for_active_penalties(username) > 0:
+            metadata["status"] = "rejected"
+        else:
+            metadata["status"] = "accepted"
+                
+        return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
+    
+    def check_user_reservation(self, msg):
+        username = msg.sender.localpart
+        metadata = {"type": "ReservationCheck"}
+        return Messaging.prepare_message(Agents.SUPERVISOR, Agents.TIMETABLE, "", **metadata)
+            await self.send(msg)
+            print(f"[{self.agent.jid.localpart}] Message sent!")       
 
     def connect_to_local_db(self):
         connection = None
