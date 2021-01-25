@@ -16,6 +16,12 @@ class Supervisor(Agent):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                if msg["type"] = "UserPenaltiesVerification"
+                    
+                elif msg["type"] = 
+
+
+                else if msg[]
                 username = msg.sender.localpart
                 metadata = {"type": "UserPenaltiesVerificationResponse"}
 
