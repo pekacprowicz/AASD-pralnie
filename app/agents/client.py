@@ -11,7 +11,7 @@ import pathlib
 
 class Client(Agent):
     
-    
+
     class CreateReservationBehav(FSMBehaviour):
         async def on_start(self):
             print(f"[{self.agent.jid.localpart}] Client CreateReservationBehav starting at initial state {self.current_state}")

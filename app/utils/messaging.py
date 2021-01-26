@@ -12,7 +12,7 @@ class Messaging:
             message.set_metadata(key, value)
 
         message.body = body
-        print(f"Message from {message.sender.localpart} to {message.to.localpart} : {message.metadata['type']}")
+        print(f"Message from {message.sender.localpart} to {message.to.localpart} : {message.metadata['performative']}")
         return message
 
     
