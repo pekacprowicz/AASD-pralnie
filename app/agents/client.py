@@ -13,6 +13,7 @@ class Client(Agent):
     
     class ClientBehav(CyclicBehaviour):
         async def run(self):
+            index = 0
             if wantToMakeReservation:
                 wantToMakeReservation = False
                 print(f"[{self.agent.jid.localpart}] Making Reservation")
@@ -28,9 +29,19 @@ class Client(Agent):
                     print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
                     if msg_type == "UserPenaltiesVerificationAccepted":
                         print(f"[{self.agent.jid.localpart}] Sending date proposals")
-                        send_date_proposal()
+                        await self.send(send_date_proposal())
                     elif msg_type == "UserPenaltiesVerificationRejected":
                         print(f"[{self.agent.jid.localpart}] User cannot reserve machine due penalties")
+                    elif msg_type == "DateAcceptred":
+                        print(f"[{self.agent.jid.localpart}] Date accepted")
+                    elif msg_type == "DateRejected":
+                        print(f"[{self.agent.jid.localpart}] Date rejected")
+                        #TODO jak zrobi się tworzenie tej klasy z listą, to tę listę trzeba wstawić w środek len()
+                        if index < len(self.get_dates_with_priority()):
+                            print(f"[{self.agent.jid.localpart}] Trying another date")
+                            await self.send(send_date_proposal())
+                        else:
+                            print(f"[{self.agent.jid.localpart}] No date from the list is available, try later")
                     elif msg_type == "UserAuthenticationAccepted":
                         print(f"[{self.agent.jid.localpart}] Authentication Accepted")
                         print(f"[{self.agent.jid.localpart}] Payment Initializing")
@@ -60,105 +71,18 @@ class Client(Agent):
                 def send_date_proposal(self):
                     possible_dates = self.get_dates_with_priority()
                     metadata = {"type": "DatetimeProposal"}
+                    self.index = self.index + 1
+                    return Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, possible_dates[index], **metadata)
+                    print(f"Sending message")
                     
-                    for date in possible_dates:
-                        msg = Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, date, **metadata)
-                        print(f"Sending message")
-                        await self.send(msg)
-
-    class DateProposalResponseState(State):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            if msg:
-                response_status = msg.get_metadata("status")
-
-                possible_dates = self.get_dates_with_priority()
-                metadata = {"type": "DatetimeProposal"}
-                
-                for date in possible_dates:
-                    msg = Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, date, **metadata)
-                    print(f"[{self.agent.jid.localpart}] Sending message")
                     await self.send(msg)
 
-            else:
-                print(f"[{self.agent.jid.localpart}] Client's {self.name} SendDateProposal State hasn't received any message")
-
-    class DateAcceptedState(State):
-        async def run(self):
-            print(f"[{self.agent.jid.localpart}] Date accepted")
-
-    class DateAcceptedState(State):
-        async def run(self):
-            print(f"[{self.agent.jid.localpart}] Date rejected")
-
-    def init_create_reservation_behaviour(self):
-        verify_msg_template = Template()
-        verify_msg_template.set_metadata("type", "UserPenaltiesVerificationResponse")
+    def init_create_client_behaviour(self):
+        #verify_msg_template = Template()
+        #verify_msg_template.set_metadata("type", "UserPenaltiesVerificationResponse")
         # verify_msg_template.set_metadata("type", "UserPenaltiesVerificationResponse")
-        vu_behav = self.VerifyUserBehav()
-        fsm = self.CreateReservationBehav()
-        fsm.add_state(name="UserPenaltiesVerificationState", state=self.UserPenaltiesVerificationState(), initial=True)
-        fsm.add_state(name="SendDateProposal", state=self.SendDateProposalState())
-        fsm.add_state(name="DateProposalResponse", state=self.DateProposalResponseState())
-        fsm.add_state(name="DateAccepted", state=self.DateAcceptedState())
-        fsm.add_state(name="DateRejected", state=self.DateRejectedState())
-        fsm.add_transition(source="UserPenaltiesVerificationState", dest="SendDateProposal")
-        fsm.add_transition(source="UserPenaltiesVerificationState", dest="DateRejected")
-        fsm.add_transition(source="SendDateProposal", dest="DateProposalResponse")
-        fsm.add_transition(source="DateProposalResponse", dest="SendDateProposal")
-        fsm.add_transition(source="DateProposalResponse", dest="DateAccepted")
-        fsm.add_transition(source="DateProposalResponse", dest="DateRejected")
-        self.add_behaviour(fsm)
-
-
-    class CreateAuthenticationAndPaymentBehav(FSMBehaviour):
-
-        async def on_start(self):
-            print(f"[{self.agent.jid.localpart}] Client fsm starting at initial state {self.current_state}")
-
-        async def on_end(self):
-            print(f"[{self.agent.jid.localpart}] Client fsm finished at state {self.current_state}")
-            await self.agent.stop()
-    
-    class AuthenticationState(State):
-        async def run(self):
-            metadata = {"type": "UserAuthentication"}
-            msg = Messaging.prepare_message(Agents.CLIENT,Agents.SUPERVISOR, "", **metadata)
-            
-            await self.send(msg)
-            print(f"[{self.agent.jid.localpart}] Message sent!")
-            self.set_next_state("STATE_TWO")
-
-
-    class AuthenticationResponseState(State):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            msg_type = msg.get_metadata("type")
-            print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
-            self.set_next_state("STATE_THREE")
-
-
-    class PaymentInitialState(State):
-        async def run(self):
-            metadata = {"type": "UserPaymentInitial"}
-            msg = Messaging.prepare_message(Agents.CLIENT, Agents.SUPERVISOR, "", **metadata)
-            
-            await self.send(msg)
-            print(f"[{self.agent.jid.localpart}] Message sent!")
-            self.set_next_state("STATE_FOUR")
-
-    class PaymentResponseState(State):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            msg_type = msg.get_metadata("type")
-            print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
-            self.set_next_state("STATE_FIVE")
-    
-    class MachineAvailableState(State):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            msg_type = msg.get_metadata("type")
-            print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
+        cli_behav = self.ClientBehav()
+        self.add_behaviour(cli_behav)
             
     class PenaltyNotificationBehav(CyclicBehaviour):
         
@@ -180,30 +104,11 @@ class Client(Agent):
         print ("Client started")
         self.db_connection = self.connect_to_local_db()
         self.db_init()
-        penalty_behav = self.PenaltyNotificationBehav()
-        penalty_template = Template()
-        penalty_template.set_metadata("type", "Absences")
-        self.add_behaviour(penalty_behav, penalty_template)
-        #self.create_res_behav = self.CreateReservationBehav()
-        #self.add_behaviour(self.create_res_behav)
-        
-        fsm = self.CreateAuthenticationAndPaymentBehav()
-        fsm.add_state(name="STATE_ONE", state=self.AuthenticationState(), initial=True)
-        fsm.add_state(name="STATE_TWO", state=self.AuthenticationResponseState())
-        fsm.add_state(name="STATE_THREE", state=self.PaymentInitialState())
-        fsm.add_state(name="STATE_FOUR", state=self.PaymentResponseState())
-        fsm.add_state(name="STATE_FIVE", state=self.MachineAvailableState())
-        fsm.add_transition(source="STATE_ONE", dest="STATE_TWO")
-        fsm.add_transition(source="STATE_TWO", dest="STATE_THREE")
-        fsm.add_transition(source="STATE_THREE", dest="STATE_FOUR")
-        fsm.add_transition(source="STATE_FOUR", dest="STATE_FIVE")
-        self.add_behaviour(fsm)
         
         self.dates_priority_list = list()
-        tmp_template = Template()
-        tmp_template.set_metadata("type", "tmp")
-        create_res_behav = self.CreateReservationBehav(self.dates_priority_list)
-        self.add_behaviour(create_res_behav, tmp_template)
+        #TODO ClientBehav nie ma obsługi utworzonej listy, trzeba to jakoś dodać
+        cli_behav = self.ClientBehav(self.dates_priority_list)
+        self.add_behaviour(cli_behav)
         
         
 
