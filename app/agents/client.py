@@ -15,6 +15,7 @@ class Client(Agent):
         index = 0
         wantToMakeReservation = True
         wantToAuthenticate = True
+
         async def run(self):
             if self.wantToMakeReservation:
                 self.wantToMakeReservation = False
@@ -27,16 +28,16 @@ class Client(Agent):
             else:
                 msg = await self.receive(timeout=10)
                 if msg:
-                    msg_type = msg.get_metadata("type")
-                    print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
-                    if msg_type == "UserPenaltiesVerificationAccepted":
+                    msg_performative = msg.get_metadata("performative")
+                    print(f"[{self.agent.jid.localpart}] Incoming msg_performative: {msg_performative}")
+                    if msg_performative == "UserPenaltiesVerificationAccepted":
                         print(f"[{self.agent.jid.localpart}] Sending date proposals")
                         await self.send(self.send_date_proposal())
-                    elif msg_type == "UserPenaltiesVerificationRejected":
+                    elif msg_performative == "UserPenaltiesVerificationRejected":
                         print(f"[{self.agent.jid.localpart}] User cannot reserve machine due penalties")
-                    elif msg_type == "DateAcceptred":
+                    elif msg_performative == "DateAcceptred":
                         print(f"[{self.agent.jid.localpart}] Date accepted")
-                    elif msg_type == "DateRejected":
+                    elif msg_performative == "DateRejected":
                         print(f"[{self.agent.jid.localpart}] Date rejected")
                         #TODO jak zrobi się tworzenie tej klasy z listą, to tę listę trzeba wstawić w środek len()
                         if self.index < 3:# len(self.get_dates_with_priority()):
@@ -44,45 +45,48 @@ class Client(Agent):
                             await self.send(self.send_date_proposal())
                         else:
                             print(f"[{self.agent.jid.localpart}] No date from the list is available, try later")
-                    elif msg_type == "UserAuthenticationAccepted":
+                    elif msg_performative == "UserAuthenticationAccepted":
                         print(f"[{self.agent.jid.localpart}] Authentication Accepted")
                         print(f"[{self.agent.jid.localpart}] Payment Initializing")
                         await self.send(self.send_payment_initialize_message())
-                    elif msg_type == "UserAuthenticationRejected":
+                    elif msg_performative == "UserAuthenticationRejected":
                         print(f"[{self.agent.jid.localpart}] Authentication Rejected")
-                    elif msg_type == "UserPaymentAccepted":
+                    elif msg_performative == "UserPaymentAccepted":
                         print(f"[{self.agent.jid.localpart}] Payment Accepted")
                         print(f"[{self.agent.jid.localpart}] Waiting for access to washing machine")
-                    elif msg_type == "UserPaymentRejected":
+                    elif msg_performative == "UserPaymentRejected":
                         print(f"[{self.agent.jid.localpart}] Payment Rejected")
                         #TODO co gdy odrzucona płatność?
-                    elif msg_type == "AccessGranted":
+                    elif msg_performative == "AccessGranted":
                         print(f"[{self.agent.jid.localpart}] Access to washing machine grated")
                 else:
                     print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
 
         def send_authentication_message(self):
-            metadata = {"type": "UserAuthentication"}
-            return Messaging.prepare_message(Agents.CLIENT, Agents.SUPERVISOR, "", **metadata)
+            metadata = {"performative": "UserAuthentication"}
+            return Messaging.prepare_message(self.agent.jid, Agents.SUPERVISOR, "", **metadata)
+
         def send_payment_initialize_message(self):
-            metadata = {"type": "UserPaymentInitial"}
-            return Messaging.prepare_message(Agents.CLIENT, Agents.SUPERVISOR, "", **metadata)
+            metadata = {"performative": "UserPaymentInitial"}
+            return Messaging.prepare_message(self.agent.jid, Agents.SUPERVISOR, "", **metadata)
+
         def send_penalties_verification_mesage(self):
-            metadata = {"type": "UserPenaltiesVerification"}
-            return Messaging.prepare_message(Agents.CLIENT, Agents.SUPERVISOR, "", **metadata)
+            metadata = {"performative": "UserPenaltiesVerification"}
+            return Messaging.prepare_message(self.agent.jid, Agents.SUPERVISOR, "", **metadata)
+
         def send_date_proposal(self):
             #TODO trzeba to jakoś poprawić, bo na razie nie umiem odwołać się do tej funkcji zpoza behav
             #possible_dates = get_dates_with_priority()
-            metadata = {"type": "DatetimeProposal"}
+            metadata = {"performative": "DatetimeProposal"}
             self.index = self.index + 1
             #TODO jak uda się to poprawić to powinno też zadziałać
             #return Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, possible_dates[index], **metadata)
-            return Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, "", **metadata)
+            return Messaging.prepare_message(self.agent.jid, Agents.TIMETABLE, "", **metadata)
 
     #def init_create_client_behaviour(self):
         #verify_msg_template = Template()
-        #verify_msg_template.set_metadata("type", "UserPenaltiesVerificationResponse")
-        # verify_msg_template.set_metadata("type", "UserPenaltiesVerificationResponse")
+        #verify_msg_template.set_metadata("performative", "UserPenaltiesVerificationResponse")
+        # verify_msg_template.set_metadata("performative", "UserPenaltiesVerificationResponse")
     #    cli_behav = self.ClientBehav()
     #    self.add_behaviour(cli_behav)
             
@@ -94,7 +98,7 @@ class Client(Agent):
     #        msg = await self.receive(timeout=10) # wait for a message for 10 seconds
     #        if msg:
     #            print(f"[{self.agent.jid.localpart}] Message received with content: {format(msg.body)}")
-    #            print(f"[{self.agent.jid.localpart}] Message received with type: {format(msg.get_metadata('type'))}")
+    #            print(f"[{self.agent.jid.localpart}] Message received with performative: {format(msg.get_metadata('performative'))}")
     #        else:
     #            print(f"[{self.agent.jid.localpart}] Did not received any message after 10 seconds")
 

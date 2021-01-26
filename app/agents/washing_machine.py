@@ -12,19 +12,19 @@ STATE_WORKING = "STATE_WORKING"
 
 class WashingMachineFSMBehaviour(FSMBehaviour):
     async def on_start(self):
-        print(f"Washing machine starting at initial state {self.current_state}")
+        print(f"{self.agent.jid.localpart} starting at initial state {self.current_state}")
 
     async def on_end(self):
-        print(f"Washing machine finished at state {self.current_state}")
+        print(f"{self.agent.jid.localpart} finished at state {self.current_state}")
         await self.agent.stop()
 
 class StateFree(State):
     async def run(self):
-        print("I'm at state free")
+        print(f"{self.agent.jid.localpart} at {STATE_FREE}")
         msg = await self.receive(timeout=10)
         if msg:
             msg_performative = msg.get_metadata("performative")
-            print(f"Incoming msg_performative: {msg_performative}")
+            print(f"{self.agent.jid.localpart}: incoming msg_performative: {msg_performative}")
             if msg_performative == "GrantAccessRequest":
                 self.agent.supervisor = msg.sender
                 self.agent.client = msg.get_metadata("client")
@@ -35,7 +35,7 @@ class StateFree(State):
         
 class StateAuth(State):
     async def run(self):
-        print("I'm at state auth")
+        print(f"{self.agent.jid.localpart} at {STATE_AUTH}")
 
         metadata = {"performative": "AccessGrantedConfirm", "client": self.agent.client}
         msg = Messaging.prepare_message(self.agent.jid, self.agent.supervisor, "", **metadata)
@@ -45,7 +45,7 @@ class StateAuth(State):
 
 class StateWorking(State):
     async def run(self):
-        print("I'm at state working")
+        print("{self.agent.jid.localpart} at {STATE_WORKING}")
         time.sleep(10)
 
         metadata = {"performative": "WorkCompletedInform"}
