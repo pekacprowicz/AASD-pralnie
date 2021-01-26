@@ -38,16 +38,16 @@ class Supervisor(Agent):
                     await self.send(send_user_payment_rejected(msg))
                 
                 elif msg_type == "AccessGranted":
-                    await self.send(send_grant_access_request(msg))
+                    await self.send(send_user_access_granted(msg))
                 elif msg_type == "UserAbsence":
                     await self.send(send_absences_information(msg))
             else:
                 print(f"[{self.agent.jid.localpart}] Didn't receive a message!")     
-                await self.agent.stop()
+            #await self.agent.stop()
                 
             def countAbsences(self):
                 #check in db
-                absences = random.choice([0, 3])
+                #absences = random.choice([0, 3])
                 #  print (absences)
                 return 3
 
@@ -58,16 +58,17 @@ class Supervisor(Agent):
                     metadata = {"type": "Absences"}
                     return Messaging.prepare_message(Agents.SUPERVISOR, Agents.CLIENT, "", **metadata)
                     # Set the message content
+
             def send_user_penalties_verification_response(self, msg):
                 username = msg.sender.localpart
                 metadata = {"type": "UserPenaltiesVerificationResponse"}
 
                 if self.search_for_active_penalties(username) > 0:
                     #metadata["status"] = "rejected"
-                    metadata = {"type": "UserPenaltiesVerificationResponseRejected"}
+                    metadata = {"type": "UserPenaltiesVerificationRejected"}
                 else:
                     #metadata["status"] = "accepted"
-                    metadata = {"type": "UserPenaltiesVerificationResponseAccepted"}
+                    metadata = {"type": "UserPenaltiesVerificationAccepted"}
                         
                 return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
                 
@@ -99,7 +100,13 @@ class Supervisor(Agent):
                 
             def send_grant_access_request(self, msg):
                 metadata = {"type": "GrantAccess"}
+                #TODO potrzebne informacje którą pralkę poinformować
                 return Messaging.prepare_message(Agents.SUPERVISOR, "washingmachine1@localhost", "", **metadata)
+            
+            def send_user_access_granted(self, msg):
+                metadata = {"type": "AccessGranted"}
+                #TODO potrzebne informacje któremu klientowi przyznano dostęp; "client" tymczasowo
+                return Messaging.prepare_message(Agents.SUPERVISOR, "client", "", **metadata)
 
     async def setup(self):
         print("Supervisor stared")

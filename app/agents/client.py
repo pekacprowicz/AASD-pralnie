@@ -11,32 +11,53 @@ import pathlib
 
 class Client(Agent):
     
-    
-    class CreateReservationBehav(FSMBehaviour):
-        async def on_start(self):
-            print(f"[{self.agent.jid.localpart}] Client CreateReservationBehav starting at initial state {self.current_state}")
-
-        async def on_end(self):
-            print(f"[{self.agent.jid.localpart}] Client CreateReservationBehav finished at state {self.current_state}")
-            await self.agent.stop()
-
-    class UserPenaltiesVerificationState(State):
+    class ClientBehav(CyclicBehaviour):
         async def run(self):
-            metadata = {"type": "UserPenaltiesVerification"}
-            msg = Messaging.prepare_message(Agents.CLIENT, Agents.SUPERVISOR, "", **metadata)
-            
-            await self.send(msg)
-            print(f"[{self.agent.jid.localpart}] Message sent!")
+            if wantToMakeReservation:
+                wantToMakeReservation = False
+                print(f"[{self.agent.jid.localpart}] Making Reservation")
+                await self.send(send_penalties_verification_mesage())
+            elif wantToAuthenticate:
+                wantToAuthenticate = False
+                print(f"[{self.agent.jid.localpart}] Starting Authentication")
+                await self.send(send_authentication_message())
+            else:
+                msg = await self.receive(timeout=10)
+                if msg:
+                    msg_type = msg.get_metadata("type")
+                    print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
+                    if msg_type == "UserPenaltiesVerificationAccepted":
+                        print(f"[{self.agent.jid.localpart}] Sending date proposals")
+                        send_date_proposal()
+                    elif msg_type == "UserPenaltiesVerificationRejected":
+                        print(f"[{self.agent.jid.localpart}] User cannot reserve machine due penalties")
+                    elif msg_type == "UserAuthenticationAccepted":
+                        print(f"[{self.agent.jid.localpart}] Authentication Accepted")
+                        print(f"[{self.agent.jid.localpart}] Payment Initializing")
+                        await self.send(send_payment_initialize_message())
+                    elif msg_type == "UserAuthenticationRejected":
+                        print(f"[{self.agent.jid.localpart}] Authentication Rejected")
+                    elif msg_type == "UserPaymentAccepted":
+                        print(f"[{self.agent.jid.localpart}] Payment Accepted")
+                        print(f"[{self.agent.jid.localpart}] Waiting for access to washing machine")
+                    elif msg_type == "UserPaymentRejected":
+                        print(f"[{self.agent.jid.localpart}] Payment Rejected")
+                        #TODO co gdy odrzucona płatność?
+                    elif msg_type == "AccessGranted":
+                        print(f"[{self.agent.jid.localpart}] Access to washing machine grated")
+                else:
+                    print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
 
-            self.set_next_state("SendDateProposal")
-
-    class SendDateProposalState(State):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            if msg:
-                response_status = msg.get_metadata("status")
-
-                if response_status == "accepted":
+                def send_authentication_message(self):
+                    metadata = {"type": "UserAuthentication"}
+                    return Messaging.prepare_message(Agents.CLIENT, Agents.SUPERVISOR, "", **metadata)
+                def send_payment_initialize_message(self):
+                    metadata = {"type": "UserPaymentInitial"}
+                    return Messaging.prepare_message(Agents.CLIENT, Agents.SUPERVISOR, "", **metadata)
+                def send_penalties_verification_mesage(self):
+                    metadata = {"type": "UserPenaltiesVerification"}
+                    return Messaging.prepare_message(Agents.CLIENT, Agents.SUPERVISOR, "", **metadata)
+                def send_date_proposal(self):
                     possible_dates = self.get_dates_with_priority()
                     metadata = {"type": "DatetimeProposal"}
                     
@@ -44,14 +65,6 @@ class Client(Agent):
                         msg = Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, date, **metadata)
                         print(f"Sending message")
                         await self.send(msg)
-                        self.set_next_state("DateProposalResponse")
-
-                else:
-                    self.exit_code("User cannot reserve machine due penalties")
-                    await self.agent.stop()
-
-            else:
-                print(f"[{self.agent.jid.localpart}] Client's {self.name} SendDateProposal State hasn't received any message")
 
     class DateProposalResponseState(State):
         async def run(self):
