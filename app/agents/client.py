@@ -2,6 +2,7 @@ import asyncio
 from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, FSMBehaviour, State, CyclicBehaviour
 from constants.agents import Agents
+from constants.performatives import Performatives
 from spade.message import Message
 from utils.messaging import Messaging
 from spade.template import Template
@@ -30,14 +31,15 @@ class Client(Agent):
                 if msg:
                     msg_performative = msg.get_metadata("performative")
                     print(f"[{self.agent.jid.localpart}] Incoming msg_performative: {msg_performative}")
-                    if msg_performative == "UserPenaltiesVerificationAccepted":
+
+                    if msg_performative == Performatives.USER_PENALTIES_VERIFICATION_ACCEPTED:
                         print(f"[{self.agent.jid.localpart}] Sending date proposals")
                         await self.send(self.send_date_proposal())
-                    elif msg_performative == "UserPenaltiesVerificationRejected":
+                    elif msg_performative == Performatives.USER_PENALTIES_VERIFICATION_REJECTED:
                         print(f"[{self.agent.jid.localpart}] User cannot reserve machine due penalties")
-                    elif msg_performative == "DateAcceptred":
+                    elif msg_performative == Performatives.DATE_ACCEPTED:
                         print(f"[{self.agent.jid.localpart}] Date accepted")
-                    elif msg_performative == "DateRejected":
+                    elif msg_performative == Performatives.DATE_REJECTED:
                         print(f"[{self.agent.jid.localpart}] Date rejected")
                         #TODO jak zrobi się tworzenie tej klasy z listą, to tę listę trzeba wstawić w środek len()
                         if self.index < 3:# len(self.get_dates_with_priority()):
@@ -45,19 +47,19 @@ class Client(Agent):
                             await self.send(self.send_date_proposal())
                         else:
                             print(f"[{self.agent.jid.localpart}] No date from the list is available, try later")
-                    elif msg_performative == "UserAuthenticationAccepted":
+                    elif msg_performative == Performatives.USER_AUTHENTICATION_ACCEPTED:
                         print(f"[{self.agent.jid.localpart}] Authentication Accepted")
                         print(f"[{self.agent.jid.localpart}] Payment Initializing")
                         await self.send(self.send_payment_initialize_message())
-                    elif msg_performative == "UserAuthenticationRejected":
+                    elif msg_performative == Performatives.USER_AUTHENTICATION_REJECTED:
                         print(f"[{self.agent.jid.localpart}] Authentication Rejected")
-                    elif msg_performative == "UserPaymentAccepted":
+                    elif msg_performative == Performatives.USER_PAYMENT_ACCEPTED:
                         print(f"[{self.agent.jid.localpart}] Payment Accepted")
                         print(f"[{self.agent.jid.localpart}] Waiting for access to washing machine")
-                    elif msg_performative == "UserPaymentRejected":
+                    elif msg_performative == Performatives.USER_PAYMENT_REJECTED:
                         print(f"[{self.agent.jid.localpart}] Payment Rejected")
                         #TODO co gdy odrzucona płatność?
-                    elif msg_performative == "AccessGranted":
+                    elif msg_performative == Performatives.CONFIRM_ACCESS_GRANTED:
                         print(f"[{self.agent.jid.localpart}] Access to washing machine grated")
                     elif msg_type == "3 Absences":
                         print(f"[{self.agent.jid.localpart}] Received information about 3 absences")
@@ -65,21 +67,21 @@ class Client(Agent):
                     print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
 
         def send_authentication_message(self):
-            metadata = {"performative": "UserAuthentication"}
+            metadata = {"performative": Performatives.REQUEST_USER_AUTHENTICATION}
             return Messaging.prepare_message(self.agent.jid, Agents.SUPERVISOR, "", **metadata)
 
         def send_payment_initialize_message(self):
-            metadata = {"performative": "UserPaymentInitial"}
+            metadata = {"performative": Performatives.USER_PAYMENT_INITIAL}
             return Messaging.prepare_message(self.agent.jid, Agents.SUPERVISOR, "", **metadata)
 
         def send_penalties_verification_mesage(self):
-            metadata = {"performative": "UserPenaltiesVerification"}
+            metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION}
             return Messaging.prepare_message(self.agent.jid, Agents.SUPERVISOR, "", **metadata)
 
         def send_date_proposal(self):
             #TODO trzeba to jakoś poprawić, bo na razie nie umiem odwołać się do tej funkcji zpoza behav
             #possible_dates = get_dates_with_priority()
-            metadata = {"performative": "DatetimeProposal"}
+            metadata = {"performative": Performatives.PROPOSE_DATETIME}
             self.index = self.index + 1
             #TODO jak uda się to poprawić to powinno też zadziałać
             #return Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, possible_dates[index], **metadata)

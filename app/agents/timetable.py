@@ -2,6 +2,7 @@ import asyncio
 from spade.agent import Agent
 from spade.behaviour import CyclicBehaviour, OneShotBehaviour
 from constants.agents import Agents
+from constants.performatives import Performatives
 from spade.message import Message
 from utils.messaging import Messaging
 from spade.template import Template
@@ -50,8 +51,7 @@ class Timetable(Agent):
                
                 print(f"[{self.agent.jid.localpart}] UserCameBehav running")
                 
-
-                metadata = {"performative": "UserAbsence"}
+                metadata = {"performative": Performatives.INFORM_USER_ABSENCE}
                 msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, "", **metadata)
 
                 
