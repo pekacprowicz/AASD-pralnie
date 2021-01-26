@@ -5,6 +5,7 @@ from spade.message import Message
 from utils.messaging import Messaging
 from spade.behaviour import FSMBehaviour, State
 from constants.agents import Agents
+from constants.performatives import Performatives
 
 STATE_FREE = "STATE_FREE"
 STATE_AUTH = "STATE_AUTH"
@@ -25,7 +26,7 @@ class StateFree(State):
         if msg:
             msg_performative = msg.get_metadata("performative")
             print(f"{self.agent.jid.localpart}: incoming msg_performative: {msg_performative}")
-            if msg_performative == "GrantAccessRequest":
+            if msg_performative == Performatives.REQUEST_GRANT_ACCESS:
                 self.agent.supervisor = msg.sender
                 self.agent.client = msg.get_metadata("client")
                 self.set_next_state(STATE_AUTH)
@@ -37,7 +38,7 @@ class StateAuth(State):
     async def run(self):
         print(f"{self.agent.jid.localpart} at {STATE_AUTH}")
 
-        metadata = {"performative": "AccessGrantedConfirm", "client": self.agent.client}
+        metadata = {"performative": Performatives.CONFIRM_ACCESS_GRANTED, "client": self.agent.client}
         msg = Messaging.prepare_message(self.agent.jid, self.agent.supervisor, "", **metadata)
         await self.send(msg)
 
@@ -45,10 +46,10 @@ class StateAuth(State):
 
 class StateWorking(State):
     async def run(self):
-        print("{self.agent.jid.localpart} at {STATE_WORKING}")
+        print(f"{self.agent.jid.localpart} at {STATE_WORKING}")
         time.sleep(10)
 
-        metadata = {"performative": "WorkCompletedInform"}
+        metadata = {"performative": Performatives.INFORM_WORK_COMPLETED}
         msg = Messaging.prepare_message(self.agent.jid, self.agent.client, "", **metadata)
         await self.send(msg)
 
