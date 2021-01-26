@@ -4,6 +4,7 @@ from spade.template import Template
 from spade.message import Message
 from utils.messaging import Messaging
 from constants.agents import Agents
+from constants.performatives import Performatives
 import pathlib
 import sqlite3
 import random
@@ -18,18 +19,18 @@ class Supervisor(Agent):
             if msg:
                 msg_performative = msg.get_metadata("performative")
                 print(f"[{self.agent.jid.localpart}] Incoming msg_performative: {msg_performative}")
-                if msg_performative == "UserPenaltiesVerification":
+                if msg_performative == Performatives.USER_PENALTIES_VERIFICATION:
                     await self.send(self.send_user_penalties_verification_response(msg))
                     print(f"[{self.agent.jid.localpart}] Message sent to Client!") 
-                elif msg_performative == "UserAuthentication":
+                elif msg_performative == Performatives.REQUEST_USER_AUTHENTICATION:
                     #ask timetable for user 
                     await self.send(self.check_user_reservation(msg))
                     print(f"[{self.agent.jid.localpart}] Message sent to Timetable!") 
-                elif msg_performative == "ReservationCheckResponseAccepted":
+                elif msg_performative == Performatives.RESERVATION_CHECK_RESPONSE_ACCEPTED:
                     await self.send(self.send_user_authentication_accepted(msg))
-                elif msg_performative == "ReservationCheckResponseRejected":
+                elif msg_performative == Performatives.RESERVATION_CHECK_RESPONSE_REJECTED:
                     await self.send(self.send_user_authentication_rejected(msg))
-                elif msg_performative == "UserPaymentInitial":
+                elif msg_performative == Performatives.USER_PAYMENT_INITIAL:
                     #if payment == accepted 
                     await self.send(self.send_user_payment_accepted(msg))
                     await self.send(self.send_grant_access_request(msg)) #send "open" message to washing machine 
@@ -37,9 +38,9 @@ class Supervisor(Agent):
                     #else send refused to client  
                     await self.send(self.send_user_payment_rejected(msg))
                 
-                elif msg_performative == "AccessGranted":
+                elif msg_performative == Performatives.CONFIRM_ACCESS_GRANTED:
                     await self.send(self.send_user_access_granted(msg))
-                elif msg_performative == "UserAbsence":
+                elif msg_performative == Performatives.INFORM_USER_ABSENCE:
                     await self.send(self.send_absences_information())
             else:
                 print(f"[{self.agent.jid.localpart}] Didn't receive a message!")     
@@ -55,57 +56,56 @@ class Supervisor(Agent):
             self.absences = self.countAbsences()
             if self.absences == 3:
                             
-                metadata = {"performative": "Absences"}
+                metadata = {"performative": Performatives.ABSENCES}
                 return Messaging.prepare_message(Agents.SUPERVISOR, Agents.CLIENT, "", **metadata)
                     # Set the message content
 
         def send_user_penalties_verification_response(self, msg):
             username = msg.sender.localpart
-            metadata = {"performative": "UserPenaltiesVerificationResponse"}
             #TODO tutaj też nie wiem jak się odwołać to funkcji spoza behav
             #if self.search_for_active_penalties(username) > 0:
             if True:
                 #metadata["status"] = "rejected"
-                metadata = {"performative": "UserPenaltiesVerificationRejected"}
+                metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION_REJECTED}
             else:
                 #metadata["status"] = "accepted"
-                metadata = {"performative": "UserPenaltiesVerificationAccepted"}
+                metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION_ACCEPTED}
                         
             return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
                 
         def check_user_reservation(self, msg):
             username = msg.sender.localpart
-            metadata = {"performative": "ReservationCheck"}
+            metadata = {"performative": Performatives.RESERVATION_CHECK}
             #TODO wysylanie informacji o kliencie w wiadomości
             return Messaging.prepare_message(Agents.SUPERVISOR, Agents.TIMETABLE, "", **metadata)  
 
         def send_user_authentication_accepted(self, msg):
             #TODO pobieranie informacji o kliencie z wiadomości
             username = "client"
-            metadata = {"performative": "UserAuthenticationAccepted"}
+            metadata = {"performative": Performatives.USER_AUTHENTICATION_ACCEPTED}
             return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata)   
                 
         def send_user_authentication_rejected(self, msg):
             #TODO pobieranie informacji o kliencie z wiadomości
             username = "client"
-            metadata = {"performative": "UserAuthenticationRejected"}
+            metadata = {"performative": Performatives.USER_AUTHENTICATION_REJECTED}
             return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata) 
 
         def send_user_payment_accepted(self, msg):
-            metadata = {"performative": "UserPaymentAccepted"}
+            metadata = {"performative": Performatives.USER_PAYMENT_ACCEPTED}
             return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
                 
         def send_user_payment_rejected(self, msg):
-            metadata = {"performative": "UserPaymentRejected"}
+            metadata = "AccessGranted"{"performative": Performatives.USER_PAYMENT_REJECTED}
             return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
                 
         def send_grant_access_request(self, msg):
-            metadata = {"performative": "GrantAccess"}
+            metadata = {"performative": Performatives.REQUEST_GRANT_ACCESS}
             #TODO potrzebne informacje którą pralkę poinformować
             return Messaging.prepare_message(Agents.SUPERVISOR, "washingmachine1@localhost", "", **metadata)
             
         def send_user_access_granted(self, msg):
-            metadata = {"performative": "AccessGranted"}
+            metadata = {"performative": Performatives.CONFIRM_ACCESS_GRANTED}
             #TODO potrzebne informacje któremu klientowi przyznano dostęp; "client" tymczasowo
             return Messaging.prepare_message(Agents.SUPERVISOR, "client", "", **metadata)
 
