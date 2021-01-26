@@ -76,8 +76,8 @@ class Supervisor(Agent):
             else:
                 #metadata["status"] = "accepted"
                 metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION_ACCEPTED}
-                        
-            return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata)
+            print(msg.sender)            
+            return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
                 
         def check_user_reservation(self, msg):
             username = msg.sender.localpart
@@ -102,7 +102,7 @@ class Supervisor(Agent):
             return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
                 
         def send_user_payment_rejected(self, msg):
-            metadata = "AccessGranted"{"performative": Performatives.USER_PAYMENT_REJECTED}
+            metadata = {"performative": Performatives.USER_PAYMENT_REJECTED}
             return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
                 
         def send_grant_access_request(self, msg):

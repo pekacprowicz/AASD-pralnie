@@ -15,58 +15,74 @@ from json import dumps
 
 class Timetable(Agent):
     
-    
-    class VerifyUserBehav(CyclicBehaviour):
+    class TimetableBehav(CyclicBehaviour):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
-                username = msg.sender.localpart
-                metadata = {"performative": "UserPenaltiesVerificationResponse"}
-
-                if self.search_for_active_penalties(username) > 0:
-                    metadata["status"] = "rejected"
+                msg_performative = msg.get_metadata("performative")
+                print(f"[{self.agent.jid.localpart}] Incoming msg_performative: {msg_performative}")
+                if "{msg.sender}" == Agents.SUPERVISOR:
+                    metadata = {"performative": "MateuszWpiszTuCoChcesz"}
+                    response = Messaging.prepare_message(Agents.TIMETABLE, msg.sender, "", **metadata)
+                    await self.send(response)
                 else:
-                    metadata["status"] = "accepted"
-                
-                response = Messaging.prepare_message(Agents.TIMETABLE, msg.sender, "", **metadata)
-                await self.send(response)
+                    metadata = {"performative": "MateuszWpiszTuCoChcesz"}
+                    response = Messaging.prepare_message(Agents.TIMETABLE, msg.sender, "", **metadata)
+                    await self.send(response)
             else:
-                print(f"Supervisor's VerifyUser Behaviour hasn't received any message")
+                print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
+    
+    #class VerifyUserBehav(CyclicBehaviour):
+    #    async def run(self):
+    #        msg = await self.receive(timeout=10)
+    #        if msg:
+    #            username = msg.sender.localpart
+    #            metadata = {"performative": "UserPenaltiesVerificationResponse"}
 
-    class UserCameBehav(OneShotBehaviour):
-        userCame = False
+    #            if self.search_for_active_penalties(username) > 0:
+    #                metadata["status"] = "rejected"
+    #            else:
+    #                metadata["status"] = "accepted"
+                
+    #            response = Messaging.prepare_message(Agents.TIMETABLE, msg.sender, "", **metadata)
+    #            await self.send(response)
+    #        else:
+    #            print(f"Supervisor's VerifyUser Behaviour hasn't received any message")
 
-        async def run(self):
+    #class UserCameBehav(OneShotBehaviour):
+    #    userCame = False
+
+    #    async def run(self):
             
-            self.userCame = self.check_if_user_came()
+    #        self.userCame = self.check_if_user_came()
             
             #self.agent.add_new_dates()
             #self.agent.delete_from_timetable()
             #self.agent.select_timetable()
             #self.agent.add_test_data()
             
-            absences = self.agent.check_absences()
+    #        absences = self.agent.check_absences()
             
-            if not self.userCame:
+    #        if not self.userCame:
                
-                print(f"[{self.agent.jid.localpart}] UserCameBehav running")
+    #            print(f"[{self.agent.jid.localpart}] UserCameBehav running")
                 
-                metadata = {"performative": Performatives.INFORM_USER_ABSENCE}
-                msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, "", **metadata)
+    #            metadata = {"performative": Performatives.INFORM_USER_ABSENCE}
+    #            msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, "", **metadata)
 
                 
     
-                await self.send(msg)
-                print(f"[{self.agent.jid.localpart}] Message sent!")
+    #            await self.send(msg)
+    #            print(f"[{self.agent.jid.localpart}] Message sent!")
 
             # stop agent from behaviour
-            await self.agent.stop()
+    #        await self.agent.stop()
             
-        def check_if_user_came(self):
-            userCame= random.choice([True, False])
+    #    def check_if_user_came(self):
+    #        userCame= random.choice([True, False])
             #  print (userCame)
     
-            return False
+    #        return False
         
         
 
@@ -74,13 +90,13 @@ class Timetable(Agent):
         print ("Timetable started")
         self.db_connection = self.connect_to_local_db()
         self.db_init()
-        verify_msg_template = Template()
-        verify_msg_template.set_metadata("performative", "UserPenaltiesVerificationResponse")
-        vu_behav = self.VerifyUserBehav()
+        #verify_msg_template = Template()
+        #verify_msg_template.set_metadata("performative")
+        #vu_behav = self.VerifyUserBehav()
         #self.add_behaviour(vu_behav, verify_msg_template)
 
-        b = self.UserCameBehav()
-        self.add_behaviour(b)
+        timet_behav = self.TimetableBehav()
+        self.add_behaviour(timet_behav)
             
 
     def connect_to_local_db(self):

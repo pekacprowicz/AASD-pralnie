@@ -61,22 +61,22 @@ class Client(Agent):
                         #TODO co gdy odrzucona płatność?
                     elif msg_performative == Performatives.CONFIRM_ACCESS_GRANTED:
                         print(f"[{self.agent.jid.localpart}] Access to washing machine grated")
-                    elif msg_type == "3 Absences":
+                    elif msg_performative == Performatives.ABSENCES:
                         print(f"[{self.agent.jid.localpart}] Received information about 3 absences")
                 else:
                     print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
 
         def send_authentication_message(self):
             metadata = {"performative": Performatives.REQUEST_USER_AUTHENTICATION}
-            return Messaging.prepare_message(self.agent.jid, Agents.SUPERVISOR, "", **metadata)
+            return Messaging.prepare_message("{self.agent.jid}", Agents.SUPERVISOR, "", **metadata)
 
         def send_payment_initialize_message(self):
             metadata = {"performative": Performatives.USER_PAYMENT_INITIAL}
-            return Messaging.prepare_message(self.agent.jid, Agents.SUPERVISOR, "", **metadata)
+            return Messaging.prepare_message("{self.agent.jid}", Agents.SUPERVISOR, "", **metadata)
 
         def send_penalties_verification_mesage(self):
             metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION}
-            return Messaging.prepare_message(self.agent.jid, Agents.SUPERVISOR, "", **metadata)
+            return Messaging.prepare_message("{self.agent.jid}", Agents.SUPERVISOR, "", **metadata)
 
         def send_date_proposal(self):
             #TODO trzeba to jakoś poprawić, bo na razie nie umiem odwołać się do tej funkcji zpoza behav
@@ -85,7 +85,7 @@ class Client(Agent):
             self.index = self.index + 1
             #TODO jak uda się to poprawić to powinno też zadziałać
             #return Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, possible_dates[index], **metadata)
-            return Messaging.prepare_message(self.agent.jid, Agents.TIMETABLE, "", **metadata)
+            return Messaging.prepare_message("{self.agent.jid}", Agents.TIMETABLE, "", **metadata)
 
     #def init_create_client_behaviour(self):
         #verify_msg_template = Template()
