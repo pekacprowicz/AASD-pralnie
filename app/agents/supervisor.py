@@ -19,94 +19,95 @@ class Supervisor(Agent):
                 msg_type = msg.get_metadata("type")
                 print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
                 if msg_type == "UserPenaltiesVerification":
-                    await self.send(send_user_penalties_verification_response(msg))
+                    await self.send(self.send_user_penalties_verification_response(msg))
                     print(f"[{self.agent.jid.localpart}] Message sent to Client!") 
                 elif msg_type == "UserAuthentication":
                     #ask timetable for user 
-                    await self.send(check_user_reservation(msg))
+                    await self.send(self.check_user_reservation(msg))
                     print(f"[{self.agent.jid.localpart}] Message sent to Timetable!") 
                 elif msg_type == "ReservationCheckResponseAccepted":
-                    await self.send(send_user_authentication_accepted(msg))
+                    await self.send(self.send_user_authentication_accepted(msg))
                 elif msg_type == "ReservationCheckResponseRejected":
-                    await self.send(send_user_authentication_rejected(msg))
+                    await self.send(self.send_user_authentication_rejected(msg))
                 elif msg_type == "UserPaymentInitial":
                     #if payment == accepted 
-                    await self.send(send_user_payment_accepted(msg))
-                    await self.send(send_grant_access_request(msg)) #send "open" message to washing machine 
+                    await self.send(self.send_user_payment_accepted(msg))
+                    await self.send(self.send_grant_access_request(msg)) #send "open" message to washing machine 
                     #TODO informacje z której pralki będzie korzystał klient
                     #else send refused to client  
-                    await self.send(send_user_payment_rejected(msg))
+                    await self.send(self.send_user_payment_rejected(msg))
                 
                 elif msg_type == "AccessGranted":
-                    await self.send(send_user_access_granted(msg))
+                    await self.send(self.send_user_access_granted(msg))
                 elif msg_type == "UserAbsence":
-                    await self.send(send_absences_information(msg))
+                    await self.send(self.send_absences_information())
             else:
                 print(f"[{self.agent.jid.localpart}] Didn't receive a message!")     
             #await self.agent.stop()
                 
-            def countAbsences(self):
+        def countAbsences(self):
                 #check in db
                 #absences = random.choice([0, 3])
                 #  print (absences)
-                return 3
+            return 3
 
-            def send_absences_information(self):
-                self.absences = self.countAbsences()
-                if self.absences == 3:
+        def send_absences_information(self):
+            self.absences = self.countAbsences()
+            if self.absences == 3:
                             
-                    metadata = {"type": "Absences"}
-                    return Messaging.prepare_message(Agents.SUPERVISOR, Agents.CLIENT, "", **metadata)
+                metadata = {"type": "Absences"}
+                return Messaging.prepare_message(Agents.SUPERVISOR, Agents.CLIENT, "", **metadata)
                     # Set the message content
 
-            def send_user_penalties_verification_response(self, msg):
-                username = msg.sender.localpart
-                metadata = {"type": "UserPenaltiesVerificationResponse"}
-
-                if self.search_for_active_penalties(username) > 0:
-                    #metadata["status"] = "rejected"
-                    metadata = {"type": "UserPenaltiesVerificationRejected"}
-                else:
-                    #metadata["status"] = "accepted"
-                    metadata = {"type": "UserPenaltiesVerificationAccepted"}
+        def send_user_penalties_verification_response(self, msg):
+            username = msg.sender.localpart
+            metadata = {"type": "UserPenaltiesVerificationResponse"}
+            #TODO tutaj też nie wiem jak się odwołać to funkcji spoza behav
+            #if self.search_for_active_penalties(username) > 0:
+            if True:
+                #metadata["status"] = "rejected"
+                metadata = {"type": "UserPenaltiesVerificationRejected"}
+            else:
+                #metadata["status"] = "accepted"
+                metadata = {"type": "UserPenaltiesVerificationAccepted"}
                         
-                return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
+            return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
                 
-            def check_user_reservation(self, msg):
-                username = msg.sender.localpart
-                metadata = {"type": "ReservationCheck"}
-                #TODO wysylanie informacji o kliencie w wiadomości
-                return Messaging.prepare_message(Agents.SUPERVISOR, Agents.TIMETABLE, "", **metadata)  
+        def check_user_reservation(self, msg):
+            username = msg.sender.localpart
+            metadata = {"type": "ReservationCheck"}
+            #TODO wysylanie informacji o kliencie w wiadomości
+            return Messaging.prepare_message(Agents.SUPERVISOR, Agents.TIMETABLE, "", **metadata)  
 
-            def send_user_authentication_accepted(self, msg):
-                #TODO pobieranie informacji o kliencie z wiadomości
-                username = "client"
-                metadata = {"type": "UserAuthenticationAccepted"}
-                return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata)   
+        def send_user_authentication_accepted(self, msg):
+            #TODO pobieranie informacji o kliencie z wiadomości
+            username = "client"
+            metadata = {"type": "UserAuthenticationAccepted"}
+            return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata)   
                 
-            def send_user_authentication_rejected(self, msg):
-                #TODO pobieranie informacji o kliencie z wiadomości
-                username = "client"
-                metadata = {"type": "UserAuthenticationRejected"}
-                return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata) 
+        def send_user_authentication_rejected(self, msg):
+            #TODO pobieranie informacji o kliencie z wiadomości
+            username = "client"
+            metadata = {"type": "UserAuthenticationRejected"}
+            return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata) 
 
-            def send_user_payment_accepted(self, msg):
-                metadata = {"type": "UserPaymentAccepted"}
-                return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
+        def send_user_payment_accepted(self, msg):
+            metadata = {"type": "UserPaymentAccepted"}
+            return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
                 
-            def send_user_payment_rejected(self, msg):
-                metadata = {"type": "UserPaymentRejected"}
-                return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
+        def send_user_payment_rejected(self, msg):
+            metadata = {"type": "UserPaymentRejected"}
+            return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
                 
-            def send_grant_access_request(self, msg):
-                metadata = {"type": "GrantAccess"}
-                #TODO potrzebne informacje którą pralkę poinformować
-                return Messaging.prepare_message(Agents.SUPERVISOR, "washingmachine1@localhost", "", **metadata)
+        def send_grant_access_request(self, msg):
+            metadata = {"type": "GrantAccess"}
+            #TODO potrzebne informacje którą pralkę poinformować
+            return Messaging.prepare_message(Agents.SUPERVISOR, "washingmachine1@localhost", "", **metadata)
             
-            def send_user_access_granted(self, msg):
-                metadata = {"type": "AccessGranted"}
-                #TODO potrzebne informacje któremu klientowi przyznano dostęp; "client" tymczasowo
-                return Messaging.prepare_message(Agents.SUPERVISOR, "client", "", **metadata)
+        def send_user_access_granted(self, msg):
+            metadata = {"type": "AccessGranted"}
+            #TODO potrzebne informacje któremu klientowi przyznano dostęp; "client" tymczasowo
+            return Messaging.prepare_message(Agents.SUPERVISOR, "client", "", **metadata)
 
     async def setup(self):
         print("Supervisor stared")
