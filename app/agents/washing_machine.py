@@ -23,13 +23,11 @@ class StateFree(State):
         print("I'm at state free")
         msg = await self.receive(timeout=10)
         if msg:
-            msg_type = msg.get_metadata("type")
-            print(f"Incoming msg_type: {msg_type}")
-            if msg_type == "GrantAccess":
-
-                # TODO otrzymać klienta
-                client = msg.get_metadata("client")
-
+            msg_performative = msg.get_metadata("performative")
+            print(f"Incoming msg_performative: {msg_performative}")
+            if msg_performative == "GrantAccessRequest":
+                self.agent.supervisor = msg.sender
+                self.agent.client = msg.get_metadata("client")
                 self.set_next_state(STATE_AUTH)
 
         print(f"No message...")
@@ -39,10 +37,9 @@ class StateAuth(State):
     async def run(self):
         print("I'm at state auth")
 
-        metadata = {"type": "AccessGranted"}
-        msg = Messaging.prepare_message(Agents.WASHINGMACHINE, Agents.SUPERVISOR, "", **metadata)
+        metadata = {"performative": "AccessGrantedConfirm", "client": self.agent.client}
+        msg = Messaging.prepare_message(self.agent.jid, self.agent.supervisor, "", **metadata)
         await self.send(msg)
-        print("Message sent!")
 
         self.set_next_state(STATE_WORKING)
 
@@ -51,15 +48,15 @@ class StateWorking(State):
         print("I'm at state working")
         time.sleep(10)
 
-        # TODO odesłać clienta powiadomienie
-        metadata = {"type": "WorkCompleted"}
-        msg = Messaging.prepare_message(Agents.WASHINGMACHINE, Agents.CLIENT, "", **metadata)
+        metadata = {"performative": "WorkCompletedInform"}
+        msg = Messaging.prepare_message(self.agent.jid, self.agent.client, "", **metadata)
         await self.send(msg)
 
         self.set_next_state(STATE_FREE)
 
 class WashingMachine(Agent):
-    client = ""
+    supervisor: str
+    client: str
 
     async def setup(self):
         fsm = WashingMachineFSMBehaviour()
