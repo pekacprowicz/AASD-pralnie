@@ -12,200 +12,108 @@ from utils.messaging import Messaging
 
 class Supervisor(Agent):
     
-    class VerifyUserBehav(CyclicBehaviour):
+    class SupervisorBehav(CyclicBehaviour):
         async def run(self):
             msg = await self.receive(timeout=10)
             if msg:
+                msg_type = msg.get_metadata("type")
                 print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
-                if msg["type"] == "UserPenaltiesVerification":
+                if msg_type == "UserPenaltiesVerification":
                     await self.send(send_user_penalties_verification_response(msg))
                     print(f"[{self.agent.jid.localpart}] Message sent to Client!") 
-                elif msg["type"] == "UserAuthentication":
+                elif msg_type == "UserAuthentication":
                     #ask timetable for user 
                     await self.send(check_user_reservation(msg))
                     print(f"[{self.agent.jid.localpart}] Message sent to Timetable!") 
-                elif msg["type"] == "ReservationCheck":
-                    await self.send(msg)
-                elif msg["type"] == "UserPaymentInitial":
-                    #TODO if payment == accepted : send accepted to client
-                    await self.send(msg)
-                    await self.send(msg) #send "open" message to washing machine
-                    #     else send refused to client  
-                    await self.send(msg)
+                elif msg_type == "ReservationCheckResponseAccepted":
+                    await self.send(send_user_authentication_accepted(msg))
+                elif msg_type == "ReservationCheckResponseRejected":
+                    await self.send(send_user_authentication_rejected(msg))
+                elif msg_type == "UserPaymentInitial":
+                    #if payment == accepted 
+                    await self.send(send_user_payment_accepted(msg))
+                    await self.send(send_grant_access_request(msg)) #send "open" message to washing machine 
+                    #TODO informacje z której pralki będzie korzystał klient
+                    #else send refused to client  
+                    await self.send(send_user_payment_rejected(msg))
                 
-                elif msg["type"] ==
-                    await self.send(msg)
-                elif msg["type"] ==
-                    await self.send(msg)
-                elif msg["type"] ==
-                    await self.send(msg)
-                elif msg["type"] ==
-                    await self.send(msg)
-                elif msg["type"] ==
-                    await self.send(msg)
-                   
+                elif msg_type == "AccessGranted":
+                    await self.send(send_grant_access_request(msg))
+                elif msg_type == "UserAbsence":
+                    await self.send(send_absences_information(msg))
             else:
-                print(f"[{self.agent.jid.localpart}] Supervisor's VerifyUser Behaviour hasn't received any message")
-
-    class CreateAuthenticationAndPaymentBehav(FSMBehaviour):
-
-        async def on_start(self):
-            print(f"[{self.agent.jid.localpart}] FSM starting at initial state {self.current_state}")
-
-        async def on_end(self):
-            print(f"[{self.agent.jid.localpart}] FSM finished at state {self.current_state}")
-            await self.agent.stop()
-    
-    class AuthenticationState(State):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            msg_type = msg.get_metadata("type")
-            CLIENT = msg.sender
-            print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
-            self.set_next_state("STATE_TWO")
-
-
-    class ReservationCheckState(State):
-        async def run(self):
-            metadata = {"type": "ReservationCheck"}
-            msg = Messaging.prepare_message(Agents.SUPERVISOR, Agents.TIMETABLE, "", **metadata)
-            await self.send(msg)
-            print(f"[{self.agent.jid.localpart}] Message sent!")
-            self.set_next_state("STATE_THREE")
-
-
-    class ReservationResponseState(State):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            msg_type = msg.get_metadata("type")
-            print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
-            self.set_next_state("STATE_FOUR")
-
-    class AuthenticationAnswerState(State):
-        async def run(self):
-            metadata = {"type": "AuthenticationAnswerCheck"}
-            msg = Messaging.prepare_message(Agents.SUPERVISOR, "client1@localhost", "", **metadata)
-            
-            await self.send(msg)
-            print(f"[{self.agent.jid.localpart}] Message sent!")
-            self.set_next_state("STATE_FIVE")
-    
-    class PaymentInitialState(State):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            msg_type = msg.get_metadata("type")
-            print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
-            self.set_next_state("STATE_SIX")
-
-    class PaymentAnswerState(State):
-        async def run(self):
-            metadata = {"type": "PaymentAnswerCheck"}
-            msg = Messaging.prepare_message(Agents.SUPERVISOR, "client1@localhost", "", **metadata)
-            
-            await self.send(msg)
-            print(f"[{self.agent.jid.localpart}] Message sent!")
-            self.set_next_state("STATE_SEVEN")
-
-    class GrantWashingMachineAccessState(State):
-        async def run(self):
-            metadata = {"type": "GrantAccess"}
-            msg = Messaging.prepare_message(Agents.SUPERVISOR, "washingmachine1@localhost", "", **metadata)
-            
-            await self.send(msg)
-            print(f"[{self.agent.jid.localpart}] Message sent!")
-            self.set_next_state("STATE_EIGHT")
-    
-    class GrantAccessResponseState(State):
-        async def run(self):
-            msg = await self.receive(timeout=10)
-            msg_type = msg.get_metadata("type")
-            print(f"[{self.agent.jid.localpart}] Incoming msg_type: {msg_type}")
-            
-            
-    class CountAbsencesBehav(CyclicBehaviour):
-            absences = 0
-            
-            async def run(self):
-                print(f"[{self.agent.jid.localpart}] CountAbsencesBehav running")
-    
-                msg = await self.receive(timeout=10) # wait for a message for 10 seconds
-                if msg:
-                    msg_type = msg.get_metadata("type")
-                    if msg_type == "UserAbsence":
-                        print(f"[{self.agent.jid.localpart}] Message received with content: {format(msg_type)}")
-                        self.absences = self.countAbsences()
-                        if self.absences == 3:
-                            
-                            metadata = {"type": "Absences"}
-                            msg = Messaging.prepare_message(Agents.SUPERVISOR, Agents.CLIENT, "", **metadata)
-                                               # Set the message content
-                            await self.send(msg)
-                        
-                        
-                else:
-                    print(f"[{self.agent.jid.localpart}] Did not received any message after 10 seconds")
-    
-                # stop agent from behaviour
-                
-               
-                    
+                print(f"[{self.agent.jid.localpart}] Didn't receive a message!")     
                 await self.agent.stop()
                 
             def countAbsences(self):
                 #check in db
                 absences = random.choice([0, 3])
                 #  print (absences)
-        
                 return 3
+
+            def send_absences_information(self):
+                self.absences = self.countAbsences()
+                if self.absences == 3:
+                            
+                    metadata = {"type": "Absences"}
+                    return Messaging.prepare_message(Agents.SUPERVISOR, Agents.CLIENT, "", **metadata)
+                    # Set the message content
+            def send_user_penalties_verification_response(self, msg):
+                username = msg.sender.localpart
+                metadata = {"type": "UserPenaltiesVerificationResponse"}
+
+                if self.search_for_active_penalties(username) > 0:
+                    #metadata["status"] = "rejected"
+                    metadata = {"type": "UserPenaltiesVerificationResponseRejected"}
+                else:
+                    #metadata["status"] = "accepted"
+                    metadata = {"type": "UserPenaltiesVerificationResponseAccepted"}
+                        
+                return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
+                
+            def check_user_reservation(self, msg):
+                username = msg.sender.localpart
+                metadata = {"type": "ReservationCheck"}
+                #TODO wysylanie informacji o kliencie w wiadomości
+                return Messaging.prepare_message(Agents.SUPERVISOR, Agents.TIMETABLE, "", **metadata)  
+
+            def send_user_authentication_accepted(self, msg):
+                #TODO pobieranie informacji o kliencie z wiadomości
+                username = "client"
+                metadata = {"type": "UserAuthenticationAccepted"}
+                return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata)   
+                
+            def send_user_authentication_rejected(self, msg):
+                #TODO pobieranie informacji o kliencie z wiadomości
+                username = "client"
+                metadata = {"type": "UserAuthenticationRejected"}
+                return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata) 
+
+            def send_user_payment_accepted(self, msg):
+                metadata = {"type": "UserPaymentAccepted"}
+                return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
+                
+            def send_user_payment_rejected(self, msg):
+                metadata = {"type": "UserPaymentRejected"}
+                return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
+                
+            def send_grant_access_request(self, msg):
+                metadata = {"type": "GrantAccess"}
+                return Messaging.prepare_message(Agents.SUPERVISOR, "washingmachine1@localhost", "", **metadata)
 
     async def setup(self):
         print("Supervisor stared")
         self.db_connection = self.connect_to_local_db()
         self.db_init()
-        verify_msg_template = Template()
-        verify_msg_template.set_metadata("type", "UserPenaltiesVerification")
-        vu_behav = self.VerifyUserBehav()
-        #self.add_behaviour(vu_behav, verify_msg_template)
-        fsm = self.CreateAuthenticationAndPaymentBehav()
-        fsm.add_state(name="STATE_ONE", state=self.AuthenticationState(), initial=True)
-        fsm.add_state(name="STATE_TWO", state=self.ReservationCheckState())
-        fsm.add_state(name="STATE_THREE", state=self.ReservationResponseState())
-        fsm.add_state(name="STATE_FOUR", state=self.AuthenticationAnswerState())
-        fsm.add_state(name="STATE_FIVE", state=self.PaymentInitialState())
-        fsm.add_state(name="STATE_SIX", state=self.PaymentAnswerState())
-        fsm.add_state(name="STATE_SEVEN", state=self.GrantWashingMachineAccessState())
-        fsm.add_state(name="STATE_EIGHT", state=self.GrantAccessResponseState())
-        fsm.add_transition(source="STATE_ONE", dest="STATE_TWO")
-        fsm.add_transition(source="STATE_TWO", dest="STATE_THREE")
-        fsm.add_transition(source="STATE_THREE", dest="STATE_FOUR")
-        fsm.add_transition(source="STATE_FOUR", dest="STATE_FIVE")
-        fsm.add_transition(source="STATE_FIVE", dest="STATE_SIX")
-        fsm.add_transition(source="STATE_SIX", dest="STATE_SEVEN")
-        fsm.add_transition(source="STATE_SEVEN", dest="STATE_EIGHT")
-        self.add_behaviour(fsm)
+        #verify_msg_template = Template()
+        #verify_msg_template.set_metadata("type", "UserPenaltiesVerification")
+        sup_behav = self.SupervisorBehav()
+        self.add_behaviour(sup_behav)
 
-        absences_behav = self.CountAbsencesBehav()
-        absences_msg_template = Template()
-        absences_msg_template.set_metadata("type", "UserAbsence")
-        self.add_behaviour(absences_behav, absences_msg_template)
-
-    def send_user_penalties_verification_response(self, msg):
-        username = msg.sender.localpart
-        metadata = {"type": "UserPenaltiesVerificationResponse"}
-
-        if self.search_for_active_penalties(username) > 0:
-            metadata["status"] = "rejected"
-        else:
-            metadata["status"] = "accepted"
-                
-        return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
-    
-    def check_user_reservation(self, msg):
-        username = msg.sender.localpart
-        metadata = {"type": "ReservationCheck"}
-        return Messaging.prepare_message(Agents.SUPERVISOR, Agents.TIMETABLE, "", **metadata)
-            await self.send(msg)
-            print(f"[{self.agent.jid.localpart}] Message sent!")       
+        #absences_behav = self.CountAbsencesBehav()
+        #absences_msg_template = Template()
+        #absences_msg_template.set_metadata("type", "UserAbsence")
+        #self.add_behaviour(absences_behav, absences_msg_template)
 
     def connect_to_local_db(self):
         connection = None
