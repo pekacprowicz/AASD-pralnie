@@ -8,8 +8,12 @@ from spade.template import Template
 import sqlite3
 import pathlib
 import random
+import numpy as np
+import datetime
+from json import dumps
 
 class Timetable(Agent):
+    
     
     class VerifyUserBehav(CyclicBehaviour):
         async def run(self):
@@ -35,12 +39,20 @@ class Timetable(Agent):
             
             self.userCame = self.check_if_user_came()
             
+            #self.agent.add_new_dates()
+            #self.agent.delete_from_timetable()
+            #self.agent.select_timetable()
+            #self.agent.add_test_data()
+            
+            absences = self.agent.check_absences()
+            
             if not self.userCame:
                
                 print(f"[{self.agent.jid.localpart}] UserCameBehav running")
                 
                 metadata = {"type": "UserAbsence"}
-                msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, "", **metadata)
+                
+                msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, dumps(absences), **metadata)
                 
     
                 await self.send(msg)
@@ -54,6 +66,8 @@ class Timetable(Agent):
             #  print (userCame)
     
             return False
+        
+        
 
     async def setup(self):
         print ("Timetable started")
@@ -66,7 +80,7 @@ class Timetable(Agent):
 
         b = self.UserCameBehav()
         self.add_behaviour(b)
-        
+            
 
     def connect_to_local_db(self):
         connection = None
@@ -80,7 +94,7 @@ class Timetable(Agent):
         return connection
 
     def get_local_db_path(self):
-        return f"db/db_{self.name}.db"
+        return "db/db_timetable.db"
 
     def db_init(self):
         sql_create_prorities_table = """ CREATE TABLE IF NOT EXISTS priorities (
@@ -89,9 +103,21 @@ class Timetable(Agent):
                                             washing_mashine integer NOT NULL,
                                             user text NOT NULL
                                     ); """
-
+    
+        sql_create_timatable_table = """ CREATE TABLE IF NOT EXISTS timetable (
+                                        	id INTEGER NOT NULL,
+                                        	date	TEXT NOT NULL,
+                                        	washing_machine	 TEXT NOT NULL,
+                                        	client	INTEGER,
+                                        	user_came	INTEGER,
+                                        	PRIMARY KEY("id" AUTOINCREMENT)
+                                        ); """
+    
+        
         crsr = self.db_connection.cursor()
         crsr.execute(sql_create_prorities_table)
+        crsr.execute(sql_create_timatable_table)
+        
 
     def get_dates_with_priority(self):
         sql_get_user_penalties = f" SELECT * FROM priorities; "
@@ -100,3 +126,130 @@ class Timetable(Agent):
         crsr.execute(sql_get_user_penalties)
         sql_get_user_penalties = crsr.fetchall()
         return sql_get_user_penalties
+    
+    
+    def check_absences(self):
+        
+        next_date = datetime.date.today()-datetime.timedelta(days=1)
+        next_date = '2021-01-25 00:00:00'
+        
+        sql_chceck_absences = f""" SELECT date, client from timetable where 
+                                    date(date) = date('{next_date}') and 
+                                    user_came is null and client is not null"""
+        
+        
+        try:
+            crsr = self.db_connection.cursor()
+            crsr.execute(sql_chceck_absences)
+            sql_chceck_absences = crsr.fetchall()
+        except Exception as e:
+            print(e) 
+        
+        
+        absences = dict()
+        key = 0
+        for client in sql_chceck_absences:
+            absences[key] = client
+            key+=1
+            
+        print (absences)
+        
+        return absences
+    
+    
+    
+    def add_test_data(self):
+         crsr = self.db_connection.cursor()
+        
+        
+         sql_add_new_dates = """ UPDATE timetable SET client = 'client1' where 
+                                 washing_machine = '1'  and 
+                                 date = '2021-01-25 10:00:00'; """
+         try:
+            crsr.execute(sql_add_new_dates)
+            self.db_connection.commit()
+            
+         except Exception as e:
+            print(e)
+
+# =============================================================================
+#     
+# Dodaje nowy dzien do kalendarza  (lub więcej dni do testowania)
+# 
+# =============================================================================
+    def add_new_dates(self):
+                
+                
+        slots = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
+        aaa = list()
+        
+        
+        #add 7 days do calendar
+        for i in range(-2, 7):
+            aaa.append(datetime.datetime.today()+datetime.timedelta(days=i))
+        
+        
+        next_date = datetime.datetime.today()+datetime.timedelta(days=7)
+        dates_list = list()
+        
+        for next_date in aaa:
+            for i in slots:
+                date = datetime.datetime(next_date.year ,next_date.month , next_date.day, i)
+                dates_list.append(str(date))
+            
+        
+        washing_machines = ["1", "2"]
+        crsr = self.db_connection.cursor()
+        
+        
+        for w in washing_machines:
+            for date in dates_list:
+                sql_add_new_dates = f""" INSERT INTO timetable (date, washing_machine)
+                                    values('{date}' , '{w}'); """
+                try:
+                    crsr.execute(sql_add_new_dates)
+                    self.db_connection.commit()
+                    
+                except Exception as e:
+                    print(e)
+                                            
+            
+    
+    
+    
+# =============================================================================
+#     
+#    Do testów - usuwa wszysko z kalendarza i pokazuje co jest w kalendarzu    
+# =============================================================================
+    def delete_from_timetable(self):
+         sql_delete_from_absences = """ DELETE FROM timetable;"""
+                    
+                    
+         try:
+            crsr = self.db_connection.cursor()
+            crsr.execute(sql_delete_from_absences)
+            self.db_connection.commit()
+            
+         except Exception as e:
+            print(e)
+        
+        
+    def select_timetable(self):
+         select_from_timetable = """ SELECT * FROM timetable;"""
+                    
+                    
+         try:
+            crsr = self.db_connection.cursor()
+            crsr.execute(select_from_timetable)
+            select_from_timetable = crsr.fetchall()
+            self.db_connection.commit()
+            
+            print (select_from_timetable)
+            
+            
+         except Exception as e:
+            print(e)
+        
+        
+        
+        

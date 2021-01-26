@@ -58,6 +58,8 @@ class Client(Agent):
                         #TODO co gdy odrzucona płatność?
                     elif msg_type == "AccessGranted":
                         print(f"[{self.agent.jid.localpart}] Access to washing machine grated")
+                    elif msg_type == "3 Absences":
+                        print(f"[{self.agent.jid.localpart}] Received information about 3 absences")
                 else:
                     print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
 

@@ -30,22 +30,23 @@ if __name__ == "__main__":
     print("Agents finished")
     
     ''' 
+    
     #informacja o (nie)wykorzystzanym praniu 
     
-    clientAgent = Client("client@localhost", "1234")
+    clientAgent = Client("client@localhost", "aasd")
     clientAgent.start()
     
-    supervisorAgent = Supervisor("supervisor@localhost", "1234")
+    supervisorAgent = Supervisor("supervisor@localhost", "123456")
     
     future = supervisorAgent.start()
     #agent.web.start(hostname="127.0.0.1", port="10000")
    
-    #future.result() # wait for receiver agent to be prepared.
+    future.result() # wait for receiver agent to be prepared.
     
     
     
 
-    timatableAgent = Timetable("timetable@localhost", "1234")
+    timatableAgent = Timetable("timetable@localhost", "123456")
     timatableAgent.start()
    
 
