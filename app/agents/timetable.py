@@ -20,7 +20,7 @@ class Timetable(Agent):
             msg = await self.receive(timeout=10)
             if msg:
                 username = msg.sender.localpart
-                metadata = {"type": "UserPenaltiesVerificationResponse"}
+                metadata = {"performative": "UserPenaltiesVerificationResponse"}
 
                 if self.search_for_active_penalties(username) > 0:
                     metadata["status"] = "rejected"
@@ -50,9 +50,10 @@ class Timetable(Agent):
                
                 print(f"[{self.agent.jid.localpart}] UserCameBehav running")
                 
-                metadata = {"type": "UserAbsence"}
-                
-                msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, dumps(absences), **metadata)
+
+                metadata = {"performative": "UserAbsence"}
+                msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, "", **metadata)
+
                 
     
                 await self.send(msg)
@@ -74,7 +75,7 @@ class Timetable(Agent):
         self.db_connection = self.connect_to_local_db()
         self.db_init()
         verify_msg_template = Template()
-        verify_msg_template.set_metadata("type", "UserPenaltiesVerificationResponse")
+        verify_msg_template.set_metadata("performative", "UserPenaltiesVerificationResponse")
         vu_behav = self.VerifyUserBehav()
         #self.add_behaviour(vu_behav, verify_msg_template)
 
