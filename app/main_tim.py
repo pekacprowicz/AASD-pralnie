@@ -33,31 +33,33 @@ if __name__ == "__main__":
     ''' 
     #informacja o (nie)wykorzystzanym praniu 
     
-    supervisorAgent = Supervisor("supervisor@localhost", "1234")
-    future = supervisorAgent.start()
+    #supervisorAgent = Supervisor("supervisor@localhost", "1234")
+    #future = supervisorAgent.start()
     #agent.web.start(hostname="127.0.0.1", port="10000")
     #future.result() # wait for receiver agent to be prepared.
 
     timatableAgent = Timetable("timetable@localhost", "1234")
     timatableAgent.start()
    
-    washingMachineAgent = WashingMachine("washingmachine@localhost", "1234")
-    washingMachineAgent.start()
+    #washingMachineAgent = WashingMachine("washingmachine@localhost", "1234")
+    #washingMachineAgent.start()
 
-    clientAgent = Client("client@localhost", "1234")
-    clientAgent.start()
+    #clientAgent = Client("client@localhost", "1234")
+    #clientAgent.start()
 
     while True:
         try:
             
-            msg = input('Client Message: ')
-            clientAgent.client_start(msg)
-            
+            #msg = input('Client Message: ')
+            #clientAgent.client_start(msg)
+            #msg = ""
             time.sleep(1)
         except KeyboardInterrupt:
-            supervisorAgent.stop()
+            #supervisorAgent.stop()
             timatableAgent.stop()
-            clientAgent.stop()
+            #clientAgent.stop()
             break
     print("Agents finished")
+    
+
        

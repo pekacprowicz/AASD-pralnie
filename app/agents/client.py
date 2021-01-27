@@ -12,22 +12,23 @@ import sqlite3
 import pathlib
 
 class Client(Agent):
-     
+    index = 0
+    wantToMakeReservation = False
+    wantToAuthenticate = False 
     class ClientBehav(CyclicBehaviour):
-        # index = 0
-        wantToMakeReservation = True
-        wantToAuthenticate = False
 
         async def run(self):
-            if self.wantToMakeReservation:
-                self.wantToMakeReservation = False
-                time.sleep(1)
+            if self.agent.wantToMakeReservation:
+                self.agent.wantToMakeReservation = False
+                #time.sleep(3)
                 print(f"[{self.agent.jid.localpart}] Making Reservation")
+                time.sleep(3)
                 await self.send(self.send_penalties_verification_mesage())
 
-            elif self.wantToAuthenticate:
-                self.wantToAuthenticate = False
+            elif self.agent.wantToAuthenticate:
+                self.agent.wantToAuthenticate = False
                 print(f"[{self.agent.jid.localpart}] Starting Authentication")
+                time.sleep(3)
                 await self.send(self.send_authentication_message())
 
             else:
@@ -53,7 +54,7 @@ class Client(Agent):
                         # TODO proponowanie kolejnych dat / kontrolowanie wiadomości klienta z terminala i podawanie ręcznie daty
 
                         # jak zrobi się tworzenie tej klasy z listą, to tę listę trzeba wstawić w środek len()
-                        if self.index < 3:# len(self.get_dates_with_priority()):
+                        if self.agent.index < 3:# len(self.get_dates_with_priority()):
                             print(f"[{self.agent.jid.localpart}] Trying another date")
                             await self.send(self.send_date_proposal())
                         else:
@@ -109,8 +110,8 @@ class Client(Agent):
 
     async def setup(self):
         print (f"[{self.jid.localpart}] started!")
-        # self.db_connection = self.connect_to_local_db()
-        # self.db_init()
+        self.db_connection = self.connect_to_local_db()
+        self.db_init()
     
         cli_behav = self.ClientBehav()
 
@@ -158,6 +159,15 @@ class Client(Agent):
 
         return dates_with_priorities
 
+    def client_start(self, message):
+        if message == "reservation" or message == "Reservation":
+            self.wantToMakeReservation = True
+        elif message == "authentication" or message == "Authentication":
+            self.wantToAuthenticate = True
+        else:
+            self.wantToMakeReservation = False
+            self.wantToAuthenticate = False
+            print(f"[{self.jid.localpart}] Wrong message!")
     #def init_create_client_behaviour(self):
         #verify_msg_template = Template()
         #verify_msg_template.set_metadata("performative", "UserPenaltiesVerificationResponse")
