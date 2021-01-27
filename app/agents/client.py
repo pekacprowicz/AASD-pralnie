@@ -52,9 +52,7 @@ class Client(Agent):
                         print(f"[{self.agent.jid.localpart}] Date rejected")
 
                         # TODO proponowanie kolejnych dat / kontrolowanie wiadomości klienta z terminala i podawanie ręcznie daty
-
-                        # jak zrobi się tworzenie tej klasy z listą, to tę listę trzeba wstawić w środek len()
-                        if self.agent.index < 3:# len(self.get_dates_with_priority()):
+                        if len(self.agent.dates) > 0:# len(self.get_dates_with_priority()):
                             print(f"[{self.agent.jid.localpart}] Trying another date")
                             await self.send(self.send_date_proposal())
                         else:
@@ -84,7 +82,8 @@ class Client(Agent):
                         print(f"[{self.agent.jid.localpart}] Received information about 3 absences")
 
                 else:
-                    print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
+                    pass
+                    # print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
 
         def send_authentication_message(self):
             metadata = {"performative": Performatives.REQUEST_USER_AUTHENTICATION}
@@ -100,12 +99,13 @@ class Client(Agent):
 
         def send_date_proposal(self):
             #trzeba to jakoś poprawić, bo na razie nie umiem odwołać się do tej funkcji zpoza behav
-            #possible_dates = get_dates_with_priority()
+            #possible_dates = get_date_with_max_priority()
             #self.index = self.index + 1
             #jak uda się to poprawić to powinno też zadziałać
             #return Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, possible_dates[index], **metadata)
             metadata = {"performative": Performatives.PROPOSE_DATETIME,
-                        "proposed_datetime": self.agent.datetime}
+                        "proposed_datetime": self.agent.dates[-1]}
+            self.agent.dates.pop(-1)
             return Messaging.prepare_message(str(self.agent.jid), Agents.TIMETABLE, "", **metadata)
 
     async def setup(self):
@@ -119,8 +119,7 @@ class Client(Agent):
         # ClientBehav nie ma obsługi utworzonej listy, trzeba to jakoś dodać
         # cli_behav = self.ClientBehav(self.dates_priority_list)
 
-        self.datetime = "30.01.2020 10:00"
-
+        self.dates = self.get_date_with_max_priority()
         self.add_behaviour(cli_behav)
         time.sleep(1)
 
@@ -150,14 +149,16 @@ class Client(Agent):
         crsr = self.db_connection.cursor()
         crsr.execute(sql_create_prorities_table)
 
-    def get_dates_with_priority(self):
-        sql_get_user_penalties = f" SELECT * FROM priorities; "
+    def get_date_with_max_priority(self):
+        sql_get_dates = f" SELECT prefered_date FROM priorities as p ORDER BY p.priority DESC; "
 
         crsr = self.db_connection.cursor()
-        crsr.execute(sql_get_user_penalties)
-        dates_with_priorities = crsr.fetchall()
-
-        return dates_with_priorities
+        crsr.execute(sql_get_dates)
+        dates = list()
+        for date in crsr.fetchall():
+            dates.append(date[0])
+        
+        return dates
 
     def client_start(self, message):
         if message == "reservation" or message == "Reservation":

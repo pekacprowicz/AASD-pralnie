@@ -39,7 +39,7 @@ class WashingMachine(Agent):
                     print(f"[{self.agent.jid.localpart}] Didn't receive a message!")
                     self.set_next_state(STATE_FREE)
             else:
-                print(f"[{self.agent.jid.localpart}] Didn't receive a message!")
+                # print(f"[{self.agent.jid.localpart}] Didn't receive a message!")
                 self.set_next_state(STATE_FREE)
 
     class StateAuth(State):

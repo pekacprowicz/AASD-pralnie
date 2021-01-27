@@ -58,7 +58,8 @@ class Supervisor(Agent):
                         await self.send(self.send_absences_information(msg))
 
             else:
-                print(f"[{self.agent.jid.localpart}] Didn't receive a message!")     
+                pass
+                # print(f"[{self.agent.jid.localpart}] Didn't receive a message!")     
             #await self.agent.stop()
                 
 
@@ -77,10 +78,8 @@ class Supervisor(Agent):
 
 
         def send_user_penalties_verification_response(self, msg):
-
-            # TODO dodać weryfikację kar
-
-            if True:
+            username = msg.sender.localpart
+            if self.agent.search_for_active_penalties(username) == 0:
                 #metadata["status"] = "accepted"
                 metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION_ACCEPTED}
             else:
@@ -181,13 +180,13 @@ class Supervisor(Agent):
         sql_get_user_penalties = f""" SELECT COUNT(end_date) FROM penalties as p
                                         WHERE p.user = \"{username}\"
                                         AND datetime(p.end_date) > datetime('now');
-                                    ); """
+                                         """
 
         crsr = self.db_connection.cursor()
         crsr.execute(sql_get_user_penalties)
-        active_penalties = int(crsr.fetchall())
+        active_penalties = int(crsr.fetchall()[0][0])
 
-        return active_penalties
+        return int(active_penalties)
     
     
     def insert_absences(self, data):

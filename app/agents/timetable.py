@@ -25,9 +25,10 @@ class Timetable(Agent):
 
                 if msg_performative == Performatives.PROPOSE_DATETIME:
 
-                    # TODO walidacja daty
+                    client = msg.get_metadata("client")
+                    vacancy = self.agent.check_vacancy(msg.get_metadata("proposed_datetime"))
 
-                    if True:
+                    if vacancy > 0:
                         metadata = {"performative": Performatives.DATE_ACCEPTED}
                         response = Messaging.prepare_message(Agents.TIMETABLE, str(msg.sender), "", **metadata)
                         await self.send(response)
@@ -40,9 +41,8 @@ class Timetable(Agent):
                 elif msg_performative == Performatives.RESERVATION_CHECK:
 
                     # TODO walidacja rezerwacji
-                    client = msg.get_metadata("client")
-
-                    if True:
+                    
+                    if True > 0:
                         metadata = {"performative": Performatives.RESERVATION_CHECK_RESPONSE_ACCEPTED,
                                     "client": client}
                         response = Messaging.prepare_message(Agents.TIMETABLE, str(msg.sender), "", **metadata)
@@ -55,7 +55,8 @@ class Timetable(Agent):
                         await self.send(response)
 
             else:
-                print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
+                pass
+                # print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
 
     async def setup(self):
         print (f"[{self.jid.localpart}] started!")
@@ -108,13 +109,14 @@ class Timetable(Agent):
         crsr.execute(sql_create_timatable_table)
         
 
-    def get_dates_with_priority(self):
-        sql_get_user_penalties = f" SELECT * FROM priorities; "
+    def check_vacancy(self, date):
+        sql_vacancy_date = f""" SELECT COUNT(t.date) FROM timetable as t
+                                        WHERE t.date = "{date}" AND t.client IS NULL; """
 
         crsr = self.db_connection.cursor()
-        crsr.execute(sql_get_user_penalties)
-        sql_get_user_penalties = crsr.fetchall()
-        return sql_get_user_penalties
+        crsr.execute(sql_vacancy_date)
+        sql_get_vacancy = crsr.fetchall()
+        return sql_get_vacancy[0][0]
     
     
     def check_absences(self):
