@@ -9,6 +9,7 @@ from spade.template import Template
 import sqlite3
 import pathlib
 import random
+import time
 import numpy as np
 import datetime
 from json import dumps
@@ -21,73 +22,26 @@ class Timetable(Agent):
             if msg:
                 msg_performative = msg.get_metadata("performative")
                 print(f"[{self.agent.jid.localpart}] Incoming msg_performative: {msg_performative}")
-                if "{msg.sender}" == Agents.SUPERVISOR:
-                    metadata = {"performative": "MateuszWpiszTuCoChcesz"}
-                    response = Messaging.prepare_message(Agents.TIMETABLE, msg.sender, "", **metadata)
-                    await self.send(response)
-                else:
-                    metadata = {"performative": "MateuszWpiszTuCoChcesz"}
-                    response = Messaging.prepare_message(Agents.TIMETABLE, msg.sender, "", **metadata)
-                    await self.send(response)
+
+                if msg_performative == Performatives.PROPOSE_DATETIME:
+
+                    # TODO walidacja daty
+
+                    if True:
+                        metadata = {"performative": Performatives.DATE_ACCEPTED}
+                        response = Messaging.prepare_message(Agents.TIMETABLE, str(msg.sender), "", **metadata)
+                        await self.send(response)
+
+                    else:
+                        metadata = {"performative": Performatives.DATE_REJECTED}
+                        response = Messaging.prepare_message(Agents.TIMETABLE, str(msg.sender), "", **metadata)
+                        await self.send(response)
+
             else:
                 print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
-    
-    #class VerifyUserBehav(CyclicBehaviour):
-    #    async def run(self):
-    #        msg = await self.receive(timeout=10)
-    #        if msg:
-    #            username = msg.sender.localpart
-    #            metadata = {"performative": "UserPenaltiesVerificationResponse"}
-
-    #            if self.search_for_active_penalties(username) > 0:
-    #                metadata["status"] = "rejected"
-    #            else:
-    #                metadata["status"] = "accepted"
-                
-    #            response = Messaging.prepare_message(Agents.TIMETABLE, msg.sender, "", **metadata)
-    #            await self.send(response)
-    #        else:
-    #            print(f"Supervisor's VerifyUser Behaviour hasn't received any message")
-
-    #class UserCameBehav(OneShotBehaviour):
-    #    userCame = False
-
-    #    async def run(self):
-            
-    #        self.userCame = self.check_if_user_came()
-            
-            #self.agent.add_new_dates()
-            #self.agent.delete_from_timetable()
-            #self.agent.select_timetable()
-            #self.agent.add_test_data()
-            
-    #        absences = self.agent.check_absences()
-            
-    #        if not self.userCame:
-               
-    #            print(f"[{self.agent.jid.localpart}] UserCameBehav running")
-                
-    #            metadata = {"performative": Performatives.INFORM_USER_ABSENCE}
-    #            msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, "", **metadata)
-
-                
-    
-    #            await self.send(msg)
-    #            print(f"[{self.agent.jid.localpart}] Message sent!")
-
-            # stop agent from behaviour
-    #        await self.agent.stop()
-            
-    #    def check_if_user_came(self):
-    #        userCame= random.choice([True, False])
-            #  print (userCame)
-    
-    #        return False
-        
-        
 
     async def setup(self):
-        print ("Timetable started")
+        print (f"[{self.jid.localpart}] started!")
         self.db_connection = self.connect_to_local_db()
         self.db_init()
         #verify_msg_template = Template()
@@ -97,6 +51,7 @@ class Timetable(Agent):
 
         timet_behav = self.TimetableBehav()
         self.add_behaviour(timet_behav)
+        time.sleep(1)
             
 
     def connect_to_local_db(self):
@@ -146,7 +101,6 @@ class Timetable(Agent):
     
     
     def check_absences(self):
-        
         next_date = datetime.date.today()-datetime.timedelta(days=1)
         next_date = '2021-01-25 00:00:00'
         
@@ -154,14 +108,12 @@ class Timetable(Agent):
                                     date(date) = date('{next_date}') and 
                                     user_came is null and client is not null"""
         
-        
         try:
             crsr = self.db_connection.cursor()
             crsr.execute(sql_chceck_absences)
             sql_chceck_absences = crsr.fetchall()
         except Exception as e:
             print(e) 
-        
         
         absences = dict()
         key = 0
@@ -177,7 +129,6 @@ class Timetable(Agent):
     
     def add_test_data(self):
          crsr = self.db_connection.cursor()
-        
         
          sql_add_new_dates = """ UPDATE timetable SET client = 'client1' where 
                                  washing_machine = '1'  and 
@@ -237,6 +188,7 @@ class Timetable(Agent):
 # =============================================================================
 #     
 #    Do testów - usuwa wszysko z kalendarza i pokazuje co jest w kalendarzu    
+#
 # =============================================================================
     def delete_from_timetable(self):
          sql_delete_from_absences = """ DELETE FROM timetable;"""
@@ -267,6 +219,58 @@ class Timetable(Agent):
          except Exception as e:
             print(e)
         
+
+    #class VerifyUserBehav(CyclicBehaviour):
+    #    async def run(self):
+    #        msg = await self.receive(timeout=10)
+    #        if msg:
+    #            username = msg.sender.localpart
+    #            metadata = {"performative": "UserPenaltiesVerificationResponse"}
+
+    #            if self.search_for_active_penalties(username) > 0:
+    #                metadata["status"] = "rejected"
+    #            else:
+    #                metadata["status"] = "accepted"
+                
+    #            response = Messaging.prepare_message(Agents.TIMETABLE, msg.sender, "", **metadata)
+    #            await self.send(response)
+    #        else:
+    #            print(f"Supervisor's VerifyUser Behaviour hasn't received any message")
+
+    #class UserCameBehav(OneShotBehaviour):
+    #    userCame = False
+
+    #    async def run(self):
+            
+    #        self.userCame = self.check_if_user_came()
+            
+            #self.agent.add_new_dates()
+            #self.agent.delete_from_timetable()
+            #self.agent.select_timetable()
+            #self.agent.add_test_data()
+            
+    #        absences = self.agent.check_absences()
+            
+    #        if not self.userCame:
+               
+    #            print(f"[{self.agent.jid.localpart}] UserCameBehav running")
+                
+    #            metadata = {"performative": Performatives.INFORM_USER_ABSENCE}
+    #            msg = Messaging.prepare_message(Agents.TIMETABLE, Agents.SUPERVISOR, "", **metadata)
+
+                
+    
+    #            await self.send(msg)
+    #            print(f"[{self.agent.jid.localpart}] Message sent!")
+
+            # stop agent from behaviour
+    #        await self.agent.stop()
+            
+    #    def check_if_user_came(self):
+    #        userCame= random.choice([True, False])
+            #  print (userCame)
+    
+    #        return False
         
-        
+                
         

@@ -4,6 +4,7 @@ import asyncio
 from agents.supervisor import Supervisor
 from agents.client import Client
 from agents.timetable import Timetable
+from agents.washing_machine import WashingMachine
 
 # asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())  # necessary on Windows
 
@@ -30,25 +31,21 @@ if __name__ == "__main__":
     print("Agents finished")
     
     ''' 
-    
     #informacja o (nie)wykorzystzanym praniu 
     
-    clientAgent = Client("client@localhost", "1234")
-    clientAgent.start()
-    
     supervisorAgent = Supervisor("supervisor@localhost", "1234")
-    
     future = supervisorAgent.start()
     #agent.web.start(hostname="127.0.0.1", port="10000")
-   
     #future.result() # wait for receiver agent to be prepared.
-    
-    
-    
 
     timatableAgent = Timetable("timetable@localhost", "1234")
     timatableAgent.start()
    
+    washingMachineAgent = WashingMachine("washing_machine@localhost", "1234")
+    washingMachineAgent.start()
+
+    clientAgent = Client("client@localhost", "1234")
+    clientAgent.start()
 
     while True:
         try:

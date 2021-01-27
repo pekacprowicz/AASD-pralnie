@@ -9,8 +9,7 @@ import pathlib
 import sqlite3
 from json import loads
 import datetime
-
-
+import time
 
 class Supervisor(Agent):
     
@@ -20,17 +19,22 @@ class Supervisor(Agent):
             if msg:
                 msg_performative = msg.get_metadata("performative")
                 print(f"[{self.agent.jid.localpart}] Incoming msg_performative: {msg_performative}")
+
                 if msg_performative == Performatives.USER_PENALTIES_VERIFICATION:
                     await self.send(self.send_user_penalties_verification_response(msg))
-                    print(f"[{self.agent.jid.localpart}] Message sent to Client!") 
+                    # print(f"[{self.agent.jid.localpart}] Message sent to Client!") 
+
                 elif msg_performative == Performatives.REQUEST_USER_AUTHENTICATION:
                     #ask timetable for user 
                     await self.send(self.check_user_reservation(msg))
-                    print(f"[{self.agent.jid.localpart}] Message sent to Timetable!") 
+                    # print(f"[{self.agent.jid.localpart}] Message sent to Timetable!") 
+
                 elif msg_performative == Performatives.RESERVATION_CHECK_RESPONSE_ACCEPTED:
                     await self.send(self.send_user_authentication_accepted(msg))
+
                 elif msg_performative == Performatives.RESERVATION_CHECK_RESPONSE_REJECTED:
                     await self.send(self.send_user_authentication_rejected(msg))
+
                 elif msg_performative == Performatives.USER_PAYMENT_INITIAL:
                     #if payment == accepted 
                     await self.send(self.send_user_payment_accepted(msg))
@@ -38,8 +42,10 @@ class Supervisor(Agent):
                     #TODO informacje z której pralki będzie korzystał klient
                     #else send refused to client  
                     await self.send(self.send_user_payment_rejected(msg))
+
                 elif msg_performative == Performatives.CONFIRM_ACCESS_GRANTED:
                     await self.send(self.send_user_access_granted(msg))
+
                 elif msg_performative == Performatives.INFORM_USER_ABSENCE:
                     #self.agent.delete()
                     #self.agent.insert_test_data()
@@ -47,6 +53,7 @@ class Supervisor(Agent):
                     result = self.send_absences_information(msg)
                     if result is not None:
                         await self.send(self.send_absences_information(msg))
+
             else:
                 print(f"[{self.agent.jid.localpart}] Didn't receive a message!")     
             #await self.agent.stop()
@@ -67,17 +74,17 @@ class Supervisor(Agent):
 
 
         def send_user_penalties_verification_response(self, msg):
-            username = msg.sender.localpart
-            #TODO tutaj też nie wiem jak się odwołać to funkcji spoza behav
-            #if self.search_for_active_penalties(username) > 0:
+
+            # TODO dodać weryfikację kar
+
             if True:
-                #metadata["status"] = "rejected"
-                metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION_REJECTED}
-            else:
                 #metadata["status"] = "accepted"
                 metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION_ACCEPTED}
-            print(msg.sender)            
-            return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata)
+            else:
+                #metadata["status"] = "rejected"
+                metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION_REJECTED}       
+
+            return Messaging.prepare_message(Agents.SUPERVISOR, str(msg.sender), "", **metadata)
                 
         def check_user_reservation(self, msg):
             username = msg.sender.localpart
@@ -116,13 +123,14 @@ class Supervisor(Agent):
             return Messaging.prepare_message(Agents.SUPERVISOR, "client", "", **metadata)
 
     async def setup(self):
-        print("Supervisor stared")
+        print (f"[{self.jid.localpart}] started!")
         self.db_connection = self.connect_to_local_db()
         self.db_init()
         #verify_msg_template = Template()
         #verify_msg_template.set_metadata("performative", "UserPenaltiesVerification")
         sup_behav = self.SupervisorBehav()
         self.add_behaviour(sup_behav)
+        time.sleep(1)
 
         #absences_behav = self.CountAbsencesBehav()
         #absences_msg_template = Template()
