@@ -25,32 +25,38 @@ class StateFree(State):
         msg = await self.receive(timeout=10)
         if msg:
             msg_performative = msg.get_metadata("performative")
-            print(f"{self.agent.jid.localpart}: incoming msg_performative: {msg_performative}")
-            if msg_performative == Performatives.REQUEST_GRANT_ACCESS:
-                self.agent.supervisor = msg.sender
+            print(f"[{self.agent.jid.localpart}]: incoming msg_performative: {msg_performative}")
+            if msg_performative == Performatives.REQUEST_GRANT_ACCESS_TO_CLIENT:
+                self.agent.supervisor = str(msg.sender)
                 self.agent.client = msg.get_metadata("client")
                 self.set_next_state(STATE_AUTH)
-
-        # print(f"No message...")
-        self.set_next_state(STATE_FREE)
+            else:
+                print(f"[{self.agent.jid.localpart}] Didn't receive a message!")
+                self.set_next_state(STATE_FREE)
+        else:
+            print(f"[{self.agent.jid.localpart}] Didn't receive a message!")
+            self.set_next_state(STATE_FREE)
         
 class StateAuth(State):
     async def run(self):
         # print(f"{self.agent.jid.localpart} at {STATE_AUTH}")
-
-        metadata = {"performative": Performatives.CONFIRM_ACCESS_GRANTED, "client": self.agent.client}
-        msg = Messaging.prepare_message(self.agent.jid, self.agent.supervisor, "", **metadata)
+        metadata = {"performative": Performatives.CONFIRM_ACCESS_GRANTED_TO_CLIENT, 
+                    "client": self.agent.client}
+        msg = Messaging.prepare_message(str(self.agent.jid), self.agent.supervisor, "", **metadata)
         await self.send(msg)
 
         self.set_next_state(STATE_WORKING)
 
 class StateWorking(State):
     async def run(self):
-        # print(f"{self.agent.jid.localpart} at {STATE_WORKING}")
-        time.sleep(10)
+        print(f"[{self.agent.jid.localpart}] at {STATE_WORKING}")
+
+        # TODO sleep blokuje całą aplikacje bo jednowątkowo działa
+        # i przez to client najpierw dostaje Inform zamiast Confirm access granted
+        # time.sleep(10)
 
         metadata = {"performative": Performatives.INFORM_WORK_COMPLETED}
-        msg = Messaging.prepare_message(self.agent.jid, self.agent.client, "", **metadata)
+        msg = Messaging.prepare_message(str(self.agent.jid), self.agent.client, "", **metadata)
         await self.send(msg)
 
         self.set_next_state(STATE_FREE)

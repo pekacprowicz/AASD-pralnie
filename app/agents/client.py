@@ -45,6 +45,7 @@ class Client(Agent):
 
                     elif msg_performative == Performatives.DATE_ACCEPTED:
                         print(f"[{self.agent.jid.localpart}] Date accepted")
+                        self.wantToAuthenticate = True
 
                     elif msg_performative == Performatives.DATE_REJECTED:
                         print(f"[{self.agent.jid.localpart}] Date rejected")
@@ -75,35 +76,36 @@ class Client(Agent):
                         #TODO co gdy odrzucona płatność?
 
                     elif msg_performative == Performatives.CONFIRM_ACCESS_GRANTED:
-                        print(f"[{self.agent.jid.localpart}] Access to washing machine grated")
+                        washingmachine = msg.get_metadata("washingmachine")
+                        print(f"[{self.agent.jid.localpart}] Access to washing machine: [{washingmachine}] granted")
 
                     elif msg_performative == Performatives.ABSENCES:
                         print(f"[{self.agent.jid.localpart}] Received information about 3 absences")
 
                 else:
-                    print(f"[{self.agent.jid.localpart}] didn't receive a message!") 
+                    print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
 
         def send_authentication_message(self):
             metadata = {"performative": Performatives.REQUEST_USER_AUTHENTICATION}
-            return Messaging.prepare_message(f"{self.agent.jid}", Agents.SUPERVISOR, "", **metadata)
+            return Messaging.prepare_message(str(self.agent.jid), Agents.SUPERVISOR, "", **metadata)
 
         def send_payment_initialize_message(self):
             metadata = {"performative": Performatives.USER_PAYMENT_INITIAL}
-            return Messaging.prepare_message(f"{self.agent.jid}", Agents.SUPERVISOR, "", **metadata)
+            return Messaging.prepare_message(str(self.agent.jid), Agents.SUPERVISOR, "", **metadata)
 
         def send_penalties_verification_mesage(self):
             metadata = {"performative": Performatives.USER_PENALTIES_VERIFICATION}
-            return Messaging.prepare_message(f"{self.agent.jid}", Agents.SUPERVISOR, "", **metadata)
+            return Messaging.prepare_message(str(self.agent.jid), Agents.SUPERVISOR, "", **metadata)
 
         def send_date_proposal(self):
-            #TODO trzeba to jakoś poprawić, bo na razie nie umiem odwołać się do tej funkcji zpoza behav
+            #trzeba to jakoś poprawić, bo na razie nie umiem odwołać się do tej funkcji zpoza behav
             #possible_dates = get_dates_with_priority()
             #self.index = self.index + 1
-            #TODO jak uda się to poprawić to powinno też zadziałać
+            #jak uda się to poprawić to powinno też zadziałać
             #return Messaging.prepare_message(Agents.CLIENT, Agents.TIMETABLE, possible_dates[index], **metadata)
             metadata = {"performative": Performatives.PROPOSE_DATETIME,
                         "proposed_datetime": self.agent.datetime}
-            return Messaging.prepare_message(f"{self.agent.jid}", Agents.TIMETABLE, "", **metadata)
+            return Messaging.prepare_message(str(self.agent.jid), Agents.TIMETABLE, "", **metadata)
 
     async def setup(self):
         print (f"[{self.jid.localpart}] started!")
@@ -113,8 +115,8 @@ class Client(Agent):
         cli_behav = self.ClientBehav()
 
         # self.dates_priority_list = list()
-        #TODO ClientBehav nie ma obsługi utworzonej listy, trzeba to jakoś dodać
-        #cli_behav = self.ClientBehav(self.dates_priority_list)
+        # ClientBehav nie ma obsługi utworzonej listy, trzeba to jakoś dodać
+        # cli_behav = self.ClientBehav(self.dates_priority_list)
 
         self.datetime = "30.01.2020 10:00"
 

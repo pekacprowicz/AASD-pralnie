@@ -41,7 +41,7 @@ if __name__ == "__main__":
     timatableAgent = Timetable("timetable@localhost", "1234")
     timatableAgent.start()
    
-    washingMachineAgent = WashingMachine("washing_machine@localhost", "1234")
+    washingMachineAgent = WashingMachine("washingmachine@localhost", "1234")
     washingMachineAgent.start()
 
     clientAgent = Client("client@localhost", "1234")

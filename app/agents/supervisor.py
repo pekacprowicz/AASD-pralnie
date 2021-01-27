@@ -36,14 +36,17 @@ class Supervisor(Agent):
                     await self.send(self.send_user_authentication_rejected(msg))
 
                 elif msg_performative == Performatives.USER_PAYMENT_INITIAL:
-                    #if payment == accepted 
-                    await self.send(self.send_user_payment_accepted(msg))
-                    await self.send(self.send_grant_access_request(msg)) #send "open" message to washing machine 
-                    #TODO informacje z której pralki będzie korzystał klient
-                    #else send refused to client  
-                    await self.send(self.send_user_payment_rejected(msg))
 
-                elif msg_performative == Performatives.CONFIRM_ACCESS_GRANTED:
+                    # TODO płatność
+
+                    if True:
+                        await self.send(self.send_user_payment_accepted(msg))
+                        await self.send(self.send_grant_access_request(msg))
+
+                    else:  
+                        await self.send(self.send_user_payment_rejected(msg))
+
+                elif msg_performative == Performatives.CONFIRM_ACCESS_GRANTED_TO_CLIENT:
                     await self.send(self.send_user_access_granted(msg))
 
                 elif msg_performative == Performatives.INFORM_USER_ABSENCE:
@@ -88,39 +91,42 @@ class Supervisor(Agent):
                 
         def check_user_reservation(self, msg):
             username = msg.sender.localpart
-            metadata = {"performative": Performatives.RESERVATION_CHECK}
-            #TODO wysylanie informacji o kliencie w wiadomości
+            metadata = {"performative": Performatives.RESERVATION_CHECK,
+                        "client": str(msg.sender)}
             return Messaging.prepare_message(Agents.SUPERVISOR, Agents.TIMETABLE, "", **metadata)  
 
         def send_user_authentication_accepted(self, msg):
             #TODO pobieranie informacji o kliencie z wiadomości
-            username = "client"
+            client = msg.get_metadata("client")
             metadata = {"performative": Performatives.USER_AUTHENTICATION_ACCEPTED}
-            return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata)   
+            return Messaging.prepare_message(Agents.SUPERVISOR, client, "", **metadata)   
                 
         def send_user_authentication_rejected(self, msg):
             #TODO pobieranie informacji o kliencie z wiadomości
-            username = "client"
+            client = msg.get_metadata("client")
             metadata = {"performative": Performatives.USER_AUTHENTICATION_REJECTED}
-            return Messaging.prepare_message(Agents.SUPERVISOR, username, "", **metadata) 
+            return Messaging.prepare_message(Agents.SUPERVISOR, client, "", **metadata) 
 
         def send_user_payment_accepted(self, msg):
             metadata = {"performative": Performatives.USER_PAYMENT_ACCEPTED}
-            return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
+            return Messaging.prepare_message(Agents.SUPERVISOR, str(msg.sender), "", **metadata) 
                 
         def send_user_payment_rejected(self, msg):
             metadata = {"performative": Performatives.USER_PAYMENT_REJECTED}
-            return Messaging.prepare_message(Agents.SUPERVISOR, msg.sender, "", **metadata) 
+            return Messaging.prepare_message(Agents.SUPERVISOR, str(msg.sender), "", **metadata) 
                 
         def send_grant_access_request(self, msg):
-            metadata = {"performative": Performatives.REQUEST_GRANT_ACCESS}
+            metadata = {"performative": Performatives.REQUEST_GRANT_ACCESS_TO_CLIENT,
+                        "client": str(msg.sender)}
+
             #TODO potrzebne informacje którą pralkę poinformować
-            return Messaging.prepare_message(Agents.SUPERVISOR, "washingmachine1@localhost", "", **metadata)
+
+            return Messaging.prepare_message(Agents.SUPERVISOR, Agents.WASHINGMACHINE, "", **metadata)
             
         def send_user_access_granted(self, msg):
-            metadata = {"performative": Performatives.CONFIRM_ACCESS_GRANTED}
-            #TODO potrzebne informacje któremu klientowi przyznano dostęp; "client" tymczasowo
-            return Messaging.prepare_message(Agents.SUPERVISOR, "client", "", **metadata)
+            metadata = {"performative": Performatives.CONFIRM_ACCESS_GRANTED,
+                        "washingmachine": str(msg.sender)}
+            return Messaging.prepare_message(Agents.SUPERVISOR, msg.get_metadata("client"), "", **metadata)
 
     async def setup(self):
         print (f"[{self.jid.localpart}] started!")

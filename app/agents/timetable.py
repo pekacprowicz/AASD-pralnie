@@ -37,6 +37,23 @@ class Timetable(Agent):
                         response = Messaging.prepare_message(Agents.TIMETABLE, str(msg.sender), "", **metadata)
                         await self.send(response)
 
+                elif msg_performative == Performatives.RESERVATION_CHECK:
+
+                    # TODO walidacja rezerwacji
+                    client = msg.get_metadata("client")
+
+                    if True:
+                        metadata = {"performative": Performatives.RESERVATION_CHECK_RESPONSE_ACCEPTED,
+                                    "client": client}
+                        response = Messaging.prepare_message(Agents.TIMETABLE, str(msg.sender), "", **metadata)
+                        await self.send(response)
+
+                    else:
+                        metadata = {"performative": Performatives.RESERVATION_CHECK_RESPONSE_REJECTED,
+                                    "client": client}
+                        response = Messaging.prepare_message(Agents.TIMETABLE, str(msg.sender), "", **metadata)
+                        await self.send(response)
+
             else:
                 print(f"[{self.agent.jid.localpart}] Didn't receive a message!") 
 

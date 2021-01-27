@@ -1,7 +1,8 @@
 class Performatives:
     INFORM_WORK_COMPLETED = "InformWorkCompleted"
+    REQUEST_GRANT_ACCESS_TO_CLIENT = "RequestGrantAccessToClient"
+    CONFIRM_ACCESS_GRANTED_TO_CLIENT = "ConfirmAccessGrantedToClient"
     CONFIRM_ACCESS_GRANTED = "ConfirmAccessGranted"
-    REQUEST_GRANT_ACCESS = "RequestGrantAccess"
     PROPOSE_DATETIME = "DatetimeProposal"
     REQUEST_USER_AUTHENTICATION = "UserAuthentication"
     INFORM_USER_ABSENCE = "InformUserAbsence"
